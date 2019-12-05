@@ -1,0 +1,52 @@
+----Workflow---
+---------------
+
+---New Ticker
+   (1) Fetch historical data
+      % Fetches exchange ticker data and save
+      % in csv file
+   FetchHistorical.py
+
+---Training
+   (1) Update ticker data in csv file
+      UpdateHistorical.py
+   (2) Load csv data in Matlab
+      IngestCrypto.m
+   (3) Normalize Price
+      NormalizePrice.m
+   (4) Calculate features (indicators)
+      CalcIndicators.m
+      GetIndsDtDdt.m
+   (5) Calculate "Hotness"
+      getOpenClose.m
+   (6) Train Models
+      BuildForest.m
+      BuildcForest.m
+      PredBuyIdx.m
+
+---Optimize
+   (1) Predictors 
+      - calculate predictors with multiple paramter sets
+      - get predictor importance
+      - Recursive Feature elimination using Simulated profits as Performance indicator 
+   (2) Optimize for trailing Stop Loss and Limit Orders threshold.
+      - Profit?
+      - Maximum drawdown?
+   (3) Calculate risk VS % used funds
+   (4) Simulate again with leverage and optimize for parameters.
+
+---Trading
+   (1) Check for new ticker Data
+   (2) Run Model
+   (3) Run Startegy
+   (4) Fire signals through API
+   (5) Save execution
+   (6) Update plots to be updated online
+
+---Notes
+   - Training will require some optimization
+   - Will need Validation and Test Set
+   - Optimize on Validation and Evaluate on Test Set
+   - Try rerunning a model that takes in running average + instant value + classification.
+
+

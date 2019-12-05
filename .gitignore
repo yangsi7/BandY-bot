@@ -1,0 +1,8 @@
+/model/*
+/Workflow.txt
+/python-binance/Data/*
+/TradeDate/*
+/python-binance/.DS_Store
+/python-binance/scripts/.*
+/python-binance/scripts/__pycache__/*
+

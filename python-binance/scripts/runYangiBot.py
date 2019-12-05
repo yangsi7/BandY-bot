@@ -55,8 +55,12 @@ def initSetUp():
     # Trading parameters
     SetUp["trade"]["StartFunds"]=100
     SetUp["trade"]["PercentFunds"]=0.5
-    SetUp["trade"]["SLTresh"]=0.02
-    SetUp["trade"]["LOTresh"]=0.02
+    SetUp["trade"]["SLTresh"]=0.019
+    SetUp["trade"]["LOTresh"]=0.019
+    SetUp["trade"]["SLslip"]=0.025
+    SetUp["trade"]["LOslip"]=0.025
+
+
 
     # Dependant Paths
     # CSVs
@@ -206,7 +210,7 @@ def initTradeFiles(SetUp):
     if not os.path.isfile(SetUp['paths']["LastInfo"]):
         CurrTradeInfo = {'CloseTimeStamp':None,'Funds':None,'chfBuy':None,'shareBuy':None,
                 'chfShort':None, 'shareShort':None, 'currStopLoss':None,'currStopLossLimit':None, 
-                'currStopLossId':None,'currLimit':None,'currLimitId':None,'BNBcomm':0}
+                'currStopLossId':None,'currLimit':None,'currLimitLimit':None,'currLimitId':None,'BNBcomm':0}
         save_obj(CurrTradeInfo,SetUp['paths']["TradeInfo"])
     else:
         CurrTradeInfo = load_obj(SetUp['paths']["LastInfo"])

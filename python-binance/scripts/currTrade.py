@@ -91,24 +91,26 @@ def buyOrder(SetUp,TradeInfo):
 # ------------
 def shortOrder(SetUp,TradeInfo):
     # Open Binance client
-    apiK = open(securePath + "BinAPI.txt", "r").read().split('\n')        
+    apiK = open(SetUp['paths']['secure'], "r").read().split('\n')        
     client = Client(apiK[0], apiK[1])
 
     # calculate ammount to short
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
     LastPrice=float(tmp['lastPrice'])        
-    TradeInfo['shareShort'] = SetUp["trade"]["Funds"]*SetUp["trade"]["PercentFunds"]/LastPrice
-
+    TradeInfo['shareShort'] = TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]/LastPrice
+    TradeInfo['chfShort'] = TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]
+    
     # -Transfer funds as collateral 
     # -Check that ammount to short < max margin loan 
     # -Initiate loan
-    transfer = client.transfer_spot_to_margin(asset=SetUp["trade"]["pairRef"], amount=str(TradeInfo['shareShort']))
+    transfer = client.transfer_spot_to_margin(asset=SetUp["trade"]["pairRef"], amount=str(TradeInfo['chfShort']))
     maxLoanDets = client.get_max_margin_loan(asset=SetUp["trade"]["pairTrade"])
-    maxloan=maxLoanDets['amount']
-    if TradeInfo['shareShort'] < maxloan:
+    maxloan=float(maxLoanDets['amount'])
+    if TradeInfo['shareShort'] > maxloan:
         print('Max possible loan to small, increase margin account funds')
+        return TradeInfo
     else:    
-        shortId = client.create_margin_loan(asset=SetUp["trade"]["pairTrade"], amount=str(shareShort))
+        shortId = client.create_margin_loan(asset=SetUp["trade"]["pairTrade"], amount=binStr(TradeInfo['shareShort']))
         TradeInfo['shortId']=shortId['tranId']
     # Check Loan and wait for it to execute
     loadStatus='init'
@@ -118,7 +120,6 @@ def shortOrder(SetUp,TradeInfo):
         loanDets = client.get_margin_loan_details(asset='BTC', txId=TradeInfo['shortId'])
         loadStatus = loanDets['rows'][0]['status']
         time.sleep(1)
-        loadStatus = loanDets['status']
         # if the loan failed, initiate again
         if loadStatus == 'FAILED':
             print('Loan failed, initiating new load')
@@ -131,7 +132,7 @@ def shortOrder(SetUp,TradeInfo):
 
     # Sell loan ammount at market price    
     if loadStatus == 'CONFIRMED':
-        TradeInfo['shareShort']=float((loanDets['principal'])
+        TradeInfo['shareShort']=float(loanDets['rows'][0]['principal'])
         order = client.create_margin_order(
         symbol=SetUp["trade"]["pair"],
         side='SELL',
@@ -149,7 +150,7 @@ def shortOrder(SetUp,TradeInfo):
         BTCcomm=0
     else:
         BTCcomm=float(a['commission'])
-    TradeInfo['Funds']=TradeInfo['Funds']+TradeInfo['chfBuy']-BTCcomm
+    TradeInfo['Funds']=TradeInfo['Funds']+TradeInfo['chfShort']-BTCcomm
     return TradeInfo        
 
 def stopLoss(SetUp,TradeInfo):
@@ -166,8 +167,8 @@ def stopLoss(SetUp,TradeInfo):
     # Calculate Stop loss value
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
     LastPrice=float(tmp['lastPrice'])
-    TradeInfo['currStopLoss'] = binFloat((1-0.5*SetUp["trade"]["SLTresh"])*LastPrice)
-    TradeInfo['currStopLossLimit'] = binFloat((1-SetUp["trade"]["SLTresh"])*LastPrice)
+    TradeInfo['currStopLoss'] = binFloat((1-SetUp["trade"]["SLTresh"])*LastPrice)
+    TradeInfo['currStopLossLimit'] = binFloat((1-SetUp["trade"]["SLlimit"])*LastPrice)
 
     # Put in the order
     order = client.create_order(
@@ -190,21 +191,21 @@ def stopLoss(SetUp,TradeInfo):
 
 def LimitOrder(SetUp,TradeInfo):
     # use implicit Falsness of empty lists
-    if self.currLimitId:
-        print('Current Limit Order (Id='+self.currLimit+') exists')
+    if TradeInfo['currLimitId']!=None:
+        print('Current Limit Order (Id='+str(TradeInfo['currLimit'])+') exists')
         print('No action taken')
-        return
+        return TradeInfo
     # Open Binance client
     apiK = open(SetUp["paths"]["secure"], "r").read().split('\n')
     client = Client(apiK[0], apiK[1])
 
     # Calculate Limit order value
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-    LastPrice=tmp['lastPrice']
-    TradeInfo['currLimitStop'] = (1+SetUp["trade"]["LOslim"]-SetUp["trade"]["SLTresh"])*LastPrice
-    TradeInfo['currLimitLimit'] = (1-SetUp["trade"]["SLTresh"])*LastPrice
+    LastPrice=float(tmp['lastPrice'])
+    TradeInfo['currLimitStop'] = (1+SetUp["trade"]["LOTresh"])*LastPrice
+    TradeInfo['currLimitLimit'] = (1+SetUp["trade"]["LOlimit"])*LastPrice
 
-    order = client.create_order(
+    order = client.create_margin_order(
     symbol=SetUp["trade"]["pair"],
     side='BUY',
     type='STOP_LOSS_LIMIT',
@@ -214,8 +215,8 @@ def LimitOrder(SetUp,TradeInfo):
     price=binStr(TradeInfo['currLimitLimit'])
     )
 
-    TradeInfo['currStopLossId']=order['orderId']
-    print('Initiated stop-limit-order at: '+ SetUp["trade"]["pairTrade"] + '=' + str(
+    TradeInfo['currLimitId']=order['orderId']
+    print('Initiated stop-limit-buy order at: '+ SetUp["trade"]["pairTrade"] + '=' + str(
         TradeInfo['currLimitStop'])+'/'+str(TradeInfo['currLimitLimit']))
     print('Latest price: '+SetUp["trade"]["pairTrade"] + '=' +str(LastPrice))
 
@@ -255,7 +256,7 @@ def updateStopLoss(SetUp,TradeInfo):
         print('------------')
         print('---Profit: '+str(TradeInfo['buyProfit']))
     elif order['status'] == 'PARTIALLY_FILLED':
-        if SetUp["trade"]["SLslip"]*LastPrice < order['price']:
+        if SetUp["trade"]["Slip"]*LastPrice < order['price']:
             print('Stop Loss-limit was missed !!!')
             tmpsell=float(order['origQty']-order[executedQty])
             if tmpsell>0:
@@ -284,7 +285,7 @@ def updateStopLoss(SetUp,TradeInfo):
         else:
             print('Stop Loss is getting filled...')
             print('--> do nothing for now...')
-    elif any(order['status'] == s for s in ['NEW', 'CANCELLED','REJECTED','EXPIRED','PENDING_CANCEL']):
+    elif any(order['status'] == s for s in ['NEW', 'CANCELED','REJECTED','EXPIRED','PENDING_CANCEL']):
         print("Stop loss status is "+order['status'])
         if order['status'] == 'NEW':
             print('Updating order...')
@@ -300,10 +301,10 @@ def updateStopLoss(SetUp,TradeInfo):
         print('Error:could not update')
     return TradeInfo
 
-def updateLimitOrder(self):
+def updateLimitOrder(SetUp,TradeInfo):
     # Need to think of double checking order book
     # Maybe another function?
-    if TradeInfo['currLimitId']=None:
+    if TradeInfo['currLimitId']==None:
         print('No limit-buy order found...')
         print('--> No action taken')
         return TradeInfo
@@ -313,9 +314,10 @@ def updateLimitOrder(self):
     client = Client(apiK[0], apiK[1])
 
     # Check Order status
-    order = client.get_order(
+    order = client.get_margin_order(
     symbol=SetUp["trade"]["pair"],
     orderId=TradeInfo['currLimitId'])
+    order['status'] ='FILLED'
     if order['status'] == 'FILLED':
         #(1) Get buy info
         #(2) Check if enough coins to pay back loan
@@ -338,22 +340,30 @@ def updateLimitOrder(self):
         #(3)
         ToBuy = loanToPay-ExecQty
         if ExecQty < loanToPay:
-            print('Buying '+Tobuy+SetUp['trade']['pairTrade'])
+            print('Buying '+str(ToBuy)+SetUp['trade']['pairTrade'])
             order2 = client.order_market_buy(
                     symbol=SetUp["trade"]["pair"],
                     quantity=binFloat(ToBuy)
+                    )
             # Update to buy for security        
             ToBuy=float(order2['executedQty'])*float(order2['price'])
             # (4)
             print('Transfering '+str(loanToPay)+SetUp["trade"]["pairTrade"]+' to margin account')
             transfer = client.transfer_spot_to_margin(asset=SetUp["trade"]["pairTrade"], amount=loanToPay)    
         else:
-            order2 = client.order_market_sell(
-                    symbol=SetUp["trade"]["pair"],
-                    quantity=-binFloat(ToBuy))
-            # Update to buy for security
-            ToBuy = -float(order2['executedQty'])*float(order2['price'])
-        SetUp["trade"]["Funds"]=SetUp["trade"]["Funds"]-ToBuy
+            if -ToBuy<0.001: # add variable here
+                print('Difference to small to sell')
+                ToBuy=0
+            else:
+                order2 = client.create_margin_order(
+                        symbol=SetUp["trade"]["pair"],
+                        side='SELL',
+                        type='MARKET',
+                        quantity=binFloat(-ToBuy),
+                        )
+                # Update to buy for security
+                ToBuy = -float(order2['executedQty'])*float(order2['price'])
+        TradeInfo["Funds"]=TradeInfo["Funds"]-ToBuy
 
         #(5)
         transaction = client.repay_margin_loan(asset=SetUp["trade"]["pairTrade"], amount=binStr(loanToPay))
@@ -361,16 +371,16 @@ def updateLimitOrder(self):
                 asset=SetUp["trade"]["pairTrade"],
                 txId=transaction['tranId'])
         repayTry=0
-        while status['status']!= 'PENDING':
+        while status['rows'][0]['status'] == 'PENDING':
             repayTry=repayTry+1
-            status = get_margin_repay_details(
+            status = client.get_margin_repay_details(
                     asset=SetUp["trade"]["pairTrade"],
-                    txId='tranId')
+                    txId=transaction['tranId'])
             time.sleep(10)
-        if status['status'] == 'FAILED':
+        if status['rows'][0]['status'] == 'FAILED':
             # Need to find better way to avoid errors
             print('Failed to repay -- need manual check')
-        elif status['status'] == 'CONFIRMED':
+        elif status['rows'][0]['status'] == 'CONFIRMED':
             print('Loan payed back successfully')
             TradeInfo['shortProfit'] = TradeInfo['chfShort'] - PriceBought*ExecQty-ToBuy
             TradeInfo['chfShort'] = 0
@@ -380,16 +390,17 @@ def updateLimitOrder(self):
     elif order['status'] == 'PARTIALLY_FILLED':
         print('Limit Order is getting filled')
         print('--> do nothing for now...')
-    elif any(order['status'] == s for s in ['NEW', 'CANCELLED','REJECTED','EXPIRED','PENDING_CANCEL']):
+    elif any(order['status'] == s for s in ['NEW', 'CANCELED','REJECTED','EXPIRED','PENDING_CANCEL']):
         if order['status'] == 'NEW':
-           print('Updating order...')
+            print('Updating order...')
             # Cancel Order and accordingly update currStopLossId
             # cancel order
-            cancelOut = client.cancel_order(
+            cancelOut = client.cancel_margin_order(
                     symbol=SetUp["trade"]["pair"],
-                    orderId=self.currLimitId)
+                    orderId=TradeInfo['currLimitId']
+                    )
             print('Order cancelled. Starting new order...')
-            TradeInfo['currStopLossId']=None
+            TradeInfo['currLimitId']=None
             # Set new stop-limit-order       
             TradeInfo=LimitOrder(SetUp,TradeInfo)
     else:
@@ -418,11 +429,11 @@ def load_obj(path):
 def binStr(amount):
     precision = 5    
     if type(amount)==str:
-        lenNum=len(str(int(float(amount))))
+        lenNum=len(str(int(round(float(amount)))))
         amount=float(amount)
         precision = precision-lenNum
     else :
-        lenNum=len(str(int(amount)))
+        lenNum=len(str(int(round(amount))))
         precision = precision-lenNum
 
         amt_str = "{:0.0{}f}".format(amount, precision)
@@ -431,11 +442,11 @@ def binStr(amount):
 def binFloat(amount):
     precision = 5
     if type(amount)==str:
-        lenNum=len(str(int(float(amount))))        
+        lenNum=len(str(int(round(float(amount)))))
         amount=float(amount)
         precision = precision-lenNum        
     else:
-        lenNum=len(str(int(amount)))
+        lenNum=len(str(int(round(amount))))
         precision = precision-lenNum    
     amt_float = float("{:0.0{}f}".format(amount, precision))
     return amt_float

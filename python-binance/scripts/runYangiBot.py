@@ -1,4 +1,19 @@
-#!/usimport os.pathr/bin/env python
+from binance.client import Client
+from datetime import datetime
+import sys
+sys.path.append('/Users/yangsi/Box Sync/Crypto/scripts/python-binance/scripts')
+import csv
+import os.path
+import argparse
+import pickle
+from datetime import datetime
+from threading import Timer
+import fetch_historical
+import time
+import matlab.engine
+import pandas as pd
+import initBot as ini
+#!/usr/bin/python
 
 """Module summary
 This script runs the incredible Yangino Bot, hoping to 
@@ -30,57 +45,15 @@ import fetch_historical
 import time
 import matlab.engine
 import pandas as pd
-
-
-def initSetUp():
-    # Case name
-    Exchange = "Binch"
-
-    # Paths
-    SetUp={"paths":{},"trade":{}};
-    SetUp['paths']["secure"]="/Users/yangsi/Box Sync/Crypto/secure/"+Exchange+"API.txt"
-    SetUp['paths']["csvwrite"]="/Users/yangsi/Box Sync/Crypto/scripts/python-binance/Data/"
-    SetUp['paths']["trade"]="/Users/yangsi/Box Sync/Crypto/scripts/python-binance/tradeData/"
-    SetUp['paths']["matlab"]="/Users/yangsi/Box Sync/Crypto/scripts/functions/"
-    SetUp['paths']["model"]="/Users/yangsi/Box Sync/Crypto/scripts/models/fre_26Nov2019.mat"
-
-    # General Parameters
-    SetUp["trade"]["pairTrade"]="BTC"
-    SetUp["trade"]["pairRef"]="USDT"
-    SetUp["trade"]["pair"]="BTCUSDT"
-    SetUp["trade"]["tickDt"]="1h"
-    SetUp["trade"]["MFee"]=0.075
-    SetUp["trade"]["TFee"]=0.075
-
-    # Trading parameters
-    SetUp["trade"]["StartFunds"]=100
-    SetUp["trade"]["PercentFunds"]=0.5
-    SetUp["trade"]["SLTresh"]=0.019
-    SetUp["trade"]["LOTresh"]=0.019
-    SetUp["trade"]["SLslip"]=0.025
-    SetUp["trade"]["LOslip"]=0.025
-
-
-
-    # Dependant Paths
-    # CSVs
-    ffile=Exchange + SetUp["trade"]["pair"] + SetUp["trade"]["tickDt"] + ".csv"
-    SetUp['paths']["Hist"]=SetUp["paths"]["csvwrite"] + ffile
-    ffile=Exchange + SetUp["trade"]["pair"] + SetUp["trade"]["tickDt"]+"_Journal.csv"
-    SetUp['paths']["Journal"]=SetUp["paths"]["csvwrite"] + ffile
-    # Pickles
-    SetUp['paths']["LastInfo"]=SetUp["paths"]["csvwrite"] + "Binance" + SetUp["trade"]["tickDt"]
-    SetUp['paths']["TradeInfo"]=SetUp["paths"]["trade"] + "CurrTradeBinance" + SetUp["trade"]["tickDt"]
-
-    return SetUp
+import initBot as ini
 
 
 def main():
     # Initialiaze paths and parameters
-    SetUp = initSetUp()
+    SetUp = ini.initSetUp()
 
     # Update Tickers
-    lrow = fetch_historical.main(['-update', '-GetcsvLast','-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"]])
+    lrow = fetch_historical.main(['-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"]])
 
     # Initialize Trade history files
     TradeInfo=initTradeFiles(SetUp)

@@ -16,8 +16,9 @@ import initBot as ini
 # Paths
 sys.path.append('/Users/yangsi/Box Sync/Crypto/scripts/python-binance/scripts')
 
+
 def main(args):
-    SetUp = ini.initSetUp()    
+    SetUp = ini.initSetUp()
     parser = argparse.ArgumentParser(description='Get ticker data.')
     parser.add_argument('-verbose', dest='verbose', action='store_true')
     parser.add_argument('-no-verbose', dest='verbose', action='store_false')
@@ -31,36 +32,23 @@ def main(args):
     # Last timestamp of database to check for corruption
     binInfoPath=SetUp["paths"]["csvwrite"] + "Binance" + args.tickDt
 
-    if not isCorrupt(SetUp["paths"]["Hist"],binInfoPath):
+    
+    if isNotCorrupt(SetUp["paths"]["Hist"],binInfoPath):
         BinInfo = load_obj(binInfoPath)
         sdate = BinInfo['LastDateStr']
     else:
         sdate = args.sdate
-        print('--Historical file does not exists or is corrupt')
-        print('-----')
-        print('--Creating new data base for '+args.pair+args.tickDt+' starting from '+sdate)
+        print('Historical file does not exists or is corrupt')
+        print('Creating new data base for '+args.pair+args.tickDt+'starting from '+sdate)
     # Get tickers    
-    ticks=getTickers(args,sdate,SetUp)
-    listTocsv=ticks.contlist
+    listTocsv=getTickers(args,sdate)
 
     # Write data to file
-    if not isCorrupt(SetUp["paths"]["Hist"],binInfoPath):
-        idx = ticks.CloseTimeStamp.index(round(BinInfo['LastTimeStamp']))
-        writeTocsv(listTocsv[idx+1:],SetUp["paths"]["Hist"],'a')
-        print("---Last update to " + args.pair + args.tickDt + " was on the " + BinInfo['LastDateStr'])
-        print("------")
-        print("Updating " + str(len(listTocsv[idx+1:]) 
-             ) + " " + args.tickDt + " ticks")         
-        BinInfo={}
+    if isNotCorrupt(SetUp["paths"]["Hist"],binInfoPath):
+        writeTocsv(listTocsv,'a')
     else:
-        a = ["OpenTimeStamp","Open","High","Low","Close","Volume","CloseTimeStamp"]
-        a.append(listTocsv)
-        writeTocsv(listTocsv,SetUp["paths"]["Hist"],'w')
-
-    BinInfo['LastTimeStamp']=ticks.CloseTimeStamp[-1]        
-    tt=ticks.CloseDate[-1]
-    BinInfo['LastDateStr']=str(tt.day)+' '+tt.strftime('%b')+', '+str(tt.year)
-    save_obj(BinInfo,binInfoPath)
+        listTocsv = ["OpenTimeStamp","Open","High","Low","Close","Volume","CloseTimeStamp"].append(listTocsv)
+        writeTocsv(listTocsv,'w')
 
     return listTocsv[-1]
 
@@ -73,16 +61,16 @@ def load_obj(path):
     with open(path + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def isCorrupt(ccsv,ppickle):
+def isNotCorrupt(csv,pickle):
  # Check if database is corrupted (Maybe implement more checks later on)    
-    if not os.path.isfile(ccsv) or not os.path.isfile(ppickle+'.pkl'):
-        return True
-    row=csvreadEnd(ccsv, 1)[0]
-    pickleLast=load_obj(ppickle)
-    if round(float(row[6]))!=pickleLast['LastTimeStamp']:
-        return True
-    else:
+    if not os.path.isfile(csv) and not os.path.isfile(pickle):
         return False
+    row=csvreadEnd(csv, 1)
+    pickleLast=load_obj(pickle)
+    if row[0]!=pickleLast['LastTimeStamp']:
+        return False
+    else:
+        return True
 
 def csvreadEnd(csvfile, nrows):
  # Reads the last nrows of a csv file
@@ -92,22 +80,22 @@ def csvreadEnd(csvfile, nrows):
     with open(csvfile,'r') as f:
         r=csv.reader(f,delimiter=',')
         row=[];
-        for i in range(row_count): # count from 0 to 7
-            if i < row_count-nrows:
-                next(r)     # and discard the rows
-            else:
-                row.append(next(r))
+    for i in range(row_count): # count from 0 to 7
+        if i < row_count-nrows:
+            next(r)     # and discard the rows
+        else:
+            row.append(next(r))
     return row
 
-def writeTocsv(llist,ppath,writeOption):
+def writeTocsv(llist,writeOption):
     # Write list to csv
-    f = open(ppath, writeOption)
+    f = open(SetUp["paths"]["Hist"], writeOption)
     wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
     for item in llist:
         wr.writerow(item)
     f.close()
 
-def getTickers(args,sdate,SetUp):
+def getTickers(args,sdate):
     # Get API keys and start Binance client
     apiK = open(SetUp["paths"]["secure"], "r").read().split('\n')
     client = Client(apiK[0], apiK[1])    
@@ -124,8 +112,8 @@ def getTickers(args,sdate,SetUp):
     tick.CloseTimeStamp = [round(item[6]/1000) for item in klines]
     tick.CloseDate = [datetime.fromtimestamp(date) for date in tick.CloseTimeStamp]
     # Tick data to be written
-    tick.contlist = [[tick.OpenTimeStamp[i],tick.Open[i],tick.High[i],tick.Low[i],tick.Close[i],tick.Volume[i],tick.CloseTimeStamp[i]] for i in range(0,len(tick.Open))]
-    return tick
+    tick.contlist = [[tick.OpenTimeStamp[i],tick.Open[i],tick.High[i],tick.Low[i],tick.Close[i],tick.Volume[i],tick.CloseTimeStamp[i]] for i in range(idx,len(tick.Open))]
+    return tick.contlist
     
 
 class TickerStruct:

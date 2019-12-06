@@ -33,7 +33,9 @@ def main(args):
 
     if not isCorrupt(SetUp["paths"]["Hist"],binInfoPath):
         BinInfo = load_obj(binInfoPath)
-        sdate = BinInfo['LastDateStr']
+        tt=datetime.fromtimestamp(BinInfo['LastTimeStamp']-3600*24)
+        dayBefore=str(tt.day)+' '+tt.strftime('%b')+', '+str(tt.year)
+        sdate = dayBefore 
     else:
         sdate = args.sdate
         print('--Historical file does not exists or is corrupt')
@@ -47,9 +49,12 @@ def main(args):
     if not isCorrupt(SetUp["paths"]["Hist"],binInfoPath):
         idx = ticks.CloseTimeStamp.index(round(BinInfo['LastTimeStamp']))
         writeTocsv(listTocsv[idx+1:],SetUp["paths"]["Hist"],'a')
-        print("---Last update to " + args.pair + args.tickDt + " was on the " + BinInfo['LastDateStr'])
-        print("------")
-        print("Updating " + str(len(listTocsv[idx+1:]) 
+        if len(listTocsv[idx+1:])==0:
+            print("---" + args.pair + args.tickDt + " is up to date!")
+        else:
+            print("---Last update to " + args.pair + args.tickDt + " was on the " + BinInfo['LastDateStr'])
+            print("------")        
+            print("Updating " + str(len(listTocsv[idx+1:]) 
              ) + " " + args.tickDt + " ticks")         
         BinInfo={}
     else:

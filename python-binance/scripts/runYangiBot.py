@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from binance.client import Client
 from datetime import datetime
 import sys
@@ -9,11 +10,12 @@ import pickle
 from datetime import datetime
 from threading import Timer
 import fetch_historical
+import fetch_recent
 import time
 import matlab.engine
 import pandas as pd
 import initBot as ini
-#!/usr/bin/python
+import currTrade
 
 """Module summary
 This script runs the incredible Yangino Bot, hoping to 
@@ -31,22 +33,6 @@ Currently set-up to trade hourly BTC-USDT candle sticks on Binance.
 """
 
 
-from binance.client import Client
-from datetime import datetime
-import sys
-sys.path.append('/Users/yangsi/Box Sync/Crypto/scripts/python-binance/scripts')
-import csv
-import os.path
-import argparse
-import pickle
-from datetime import datetime
-from threading import Timer
-import fetch_historical
-import time
-import matlab.engine
-import pandas as pd
-import initBot as ini
-
 
 def main():
     # Initialiaze paths and parameters
@@ -56,39 +42,41 @@ def main():
     lrow = fetch_historical.main(['-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"]])
 
     # Initialize Trade history files
-    TradeInfo=initTradeFiles(SetUp)
+    TradeInfo=currTrade.initTradeFiles(SetUp)
     if TradeInfo['Funds']==None:
         TradeInfo['Funds']=SetUp['trade']['StartFunds']
 
     while True:
-        # Start 2 minutes before next ticker (hours for now) 
-        x=datetime.today()
-        y=x.replace(day=x.day, hour=x.hour, minute=58, second=0, microsecond=0)
-        delta_t=y-x
-        secs=delta_t.seconds+1
-        
-        t = Timer(secs, CheckNew(SetUp)
-        out = t.start()
-        if not NewTicker:
-            print('Error: did not find new ticks')
-            break
-        print("New tick is "+ str(out(2)))
-        signal = fireSig(SetUp["paths"]["model"])
+        if TradeInfo['CloseTimeStamp'] != None:
+            # Wait for next ticker
+            waitForTicker()
+            # Start checking
+            NewTicker,TradeInfo=CheckNew(SetUp,TradeInfo)
+            if not NewTicker:
+                print('Error: did not find new ticks')
+                break
+        else:
 
-    # Test CurrTrade
-    SetUp = initSetUp()
-    TradeInfo=initTradeFiles(SetUp)
-    if TradeInfo['Funds']==None:
-        TradeInfo['Funds']=SetUp['trade']['StartFunds']    
+            signal = fireSig(SetUp)
+            TradeInfo=currTrade.TakeAction(TradeInfo,signal,SetUp)
 
-    # Buy 
-    TradeInfo=currTrade.buyOrder(SetUp,TradeInfo)
 
-    # Initiate Stop Loss
-    TradeInfo=currTrade.stopLoss(SetUp,TradeInfo)
-    
 # Strategy done in matlab
-# Now need function to
+# Now    while True:
+        if TradeInfo['CloseTimeStamp'] != None:
+            # Wait for next ticker
+            waitForTicker()
+            # Start checking
+            TradeInfo=CheckNew(SetUp,TradeInfo)
+            if not NewTicker:
+                print('Error: did not find new ticks')
+                break
+            else:
+                print("New tick is "+ str(out(2)))
+        else:
+            signal = fireSig(SetUp)
+            currTrade.TakeAction(TradeInfo,signal,SetUp) need function to
+
     # (1) Check for existing trades()
     # (2) Start orders if needed
     # (3) Set Stop-loses / Limit orders of needed
@@ -107,38 +95,31 @@ def main():
         ## Need to go through Class CurrentTrade
          # and check that all selfs are updated 
 
-def unpackOrder(order):
-    p
-def fireSig(SetUp):
-    # call matlab scripts
-    eng = matlab.engine.start_matlab()
-    eng.addpath(SetUp["paths"]["matlab"])
-    nrows = int(eng.getMaxWinForPython('model',SetUp["paths"]["model"]))
-    rows = fetch_recent.main(['-window',str(nrows+1)])
-    rows = [[float(i) for i in j] for j in rows]
-    try:
-        # Fire Buy/Short/Sell signals
-        signal = eng.fireSigForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
-    except:
-        print("Unexpected error:", sys.exc_info()[0])
-    eng.quit()
-    return signal
-
-    qty=0
-    comm=0
-    for i in order['fills']:
-        price = price + i['price']
-        qty = qty + i['qty']
-        comm= comm + i['comm']
-    AdjPrice = Price-comm
-    return AdjPrice,qty,comm
+def waitForTicker():
+    x=datetime.today()
+    y=x.replace(day=x.day, hour=x.hour, minute=58, second=0, microsecond=0)
+    delta_t=y-x
+    secs=delta_t.seconds+1
+    secWakeUp=60 # Wake up this many seconds before
+    minInterv=10
+    secInterv=minInterv*60
+    nInterval=int(max(0,(secs-secWakeUp)//secInterv))
+    # Sleep and Wake up this one minute before
+    print('* * * * Next ticker in about '+str(secs//60)+' minutes * * * *')
+    print('---> Going to sleep')
+    for tt in range(0,nInterval):
+        time.sleep(secInterv)
+        print('...'+str((secs-secWakeUp-(tt+1)*secInterv)//60)+'min left...',end = '')
+        sys.stdout.flush()
+    timeleft=(secs-secWakeUp-nInterval*secInterv)
+    time.sleep(timeleft)
 
 def fireSig(SetUp):
     # call matlab scripts 
     eng = matlab.engine.start_matlab()
     eng.addpath(SetUp["paths"]["matlab"])
     nrows = int(eng.getMaxWinForPython('model',SetUp["paths"]["model"]))
-    rows = fetch_recent.main(['-window',str(nrows+1)])
+    rows = fetch_recent.main(SetUp,['-window',str(nrows+1)])
     rows = [[float(i) for i in j] for j in rows]
     try:
         # Fire Buy/Short/Sell signals
@@ -148,19 +129,18 @@ def fireSig(SetUp):
     eng.quit()
     return signal
 
-def CheckNew(pathInfo, pathTrade):
+def CheckNew(SetUp,TradeInfo):
     NewTicker=False
     iter=0
     starttime=time.time()
     while time.time()-starttime < 240:
         iter=iter+1
         try:
-            Tick = fetch_historical.main(['-update','-GetcsvLast',
+            Tick = fetch_historical.main([
                 '-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"],'-no-verbose'])
         finally:
-            LastInfo = load_obj(SetUp['paths']["LastInfo"])
-            TradeInfo = load_obj(pathTrade)
-        if LastInfo['LastTimeStamp'] == TradeInfo['CloseTimeStamp']:
+            LastInfo=load_obj(SetUp['paths']["LastInfo"])
+        if TradeInfo['CloseTimeStamp'] != LastInfo['LastTimeStamp']:
             if iter == 1: 
                 print("Start checking for new ticker")
                 print("No new ticker yet",end='')
@@ -176,36 +156,7 @@ def CheckNew(pathInfo, pathTrade):
     if not NewTicker:
         print("")
         print("No Ticker found... exiting")
-    return NewTicker,Tick         
-
-def initTradeFiles(SetUp):
-    # Initialize or load trade Information (pickle)
-    if not os.path.isfile(SetUp['paths']["LastInfo"]):
-        CurrTradeInfo = {'CloseTimeStamp':None,'Funds':None,'chfBuy':None,'shareBuy':None,
-                'chfShort':None, 'shareShort':None, 'currStopLoss':None,'currStopLossLimit':None, 
-                'currStopLossId':None,'currLimit':None,'currLimitLimit':None,'currLimitId':None,'BNBcomm':0}
-        save_obj(CurrTradeInfo,SetUp['paths']["TradeInfo"])
-    else:
-        CurrTradeInfo = load_obj(SetUp['paths']["LastInfo"])
-    if not os.path.isfile(SetUp['paths']["Journal"]):
-        # Write data to file
-        writeOption = 'w'
-        f = open(SetUp['paths']["Journal"], writeOption)
-        wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
-        wr.writerow(["CloseTimeStamp","Funds","Shares","Close","Signal","Buys-action","Short-action","CurrChfBuy","CurrChfShort","CurrSharesBuy","CurrSharesShort","CloseBuy","CloseShort", "Curr Stop loss","Curr limit"])
-        f.close()
-    return CurrTradeInfo
-
-def unpackTradeInfo(CurrTradeInfo):
-    Funds=CurrTradeInfo['Funds']
-    chfBuy=CurrTradeInfo['chfBuy']
-    chfShort=CurrTradeInfo['chfShort']
-    shareBuy=CurrTradeInfo['shareBuy']
-    shareShort=CurrTradeInfo['shareShort']
-    currStopLoss=CurrTradeInfo['currStopLoss']
-    currLimit=CurrTradeInfo['currLimit']
-    return (Funds,chfBuy,chfShort,shareBuy,shareShort,currStopLoss,currLimit)
-
+    return NewTicker,TradeInfo         
 
 def writetTosv(path,row):
     # Write data to file

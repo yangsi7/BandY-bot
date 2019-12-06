@@ -19,7 +19,10 @@ import pickle
 from datetime import datetime
 from threading import Timer
 import fetch_historical
+import fetch_recent
 import time
+import matlab.engine
+import initBot as ini
 
 
 
@@ -57,7 +60,114 @@ import time
 #            # stopLoss
 #            # updateStopLoss (need to see if it fails or not when limit is hit)
 #            # shortrder
+def TakeAction(TradeInfo,signal,SetUp):
+    print('-----')
+    print('---Hotness index is .......'+str(round(signal,2)))
+    print('-----')
+    print('')
+    if TradeInfo['currLimit']==None and TradeInfo['currStopLoss']==None and 0.2<signal <0.8:
+        TradeInfo['action'].append(None)
+        print('--> No action taken')
+    #-------------
+    #--Close Buy
+    #-------------
+    if TradeInfo['shareBuy'] != None and TradeInfo['currStopLoss']==None and signal>=0.8:
+        print('---Index is getting cold!')
+        print('------')
+        print('---Setting a stop-limit to close the buy order...')
+        print('')
+        TradeInfo['action'].append('Stop=limit-sell')
+        TradeInfo=stopLoss(SetUp,TradeInfo)
+    #-------------
+    #--Update Stop-limit-sell
+    #-------------
+    if TradeInfo['shareBuy'] != None and TradeInfo['currStopLoss']!=None:
+        print('---Updating the existing stop-limit sell order...')
+        print('')
+        TradeInfo['action'].append('Update stop-limit-sell')
+        TradeInfo=updateLimitOrder(SetUp,TradeInfo)
+    #-------------
+    #--Close short
+    #-------------
+    if TradeInfo['shareShort'] != None and TradeInfo['currLimit']==None and signal<=0.2:
+        print('---Index is getting hot!')
+        print('------')
+        print('---Setting a stop-limit to close the short order...')
+        print('')
+        TradeInfo['action'].append('Stop-limit-buy')
+        TradeInfo=LimitOrder(SetUp,TradeInfo)
+    #-------------
+    #--Update Stop-limit-buy
+    #-------------
+    if TradeInfo['shareShort'] != None and TradeInfo['currLimit']!=None:
+        print('---Updating the existing stop-limit buy order...')
+        print('')
+        TradeInfo['action'].append('Update stop-limit-buy')
+        TradeInfo=updateStopLoss(SetUp,TradeInfo)
+    #-------------
+    #--Buy
+    #-------------
+    if TradeInfo['shareBuy'] == None and signal<=0.2:
+        print('---Index is getting hot!')
+        print('------')
+        print('---Starting a buy order...')
+        TradeInfo['action'].append('Buy')
+        TradeInfo=buyOrder(SetUp,TradeInfo)
+    #-------------
+    #--Short
+    #-------------
+    if TradeInfo['shareShort'] == None and signal>=0.8:
+        print('---Index is getting cold!')
+        print('------')
+        print('---Starting a short order...')
+        TradeInfo['action'].append('Sell')
+        TradeInfo=shortOrder(SetUp,TradeInfo)
+    # Write trade journal
+    LastInfo = load_obj(SetUp['paths']["LastInfo"])
+    TradeInfo['CloseTimeStamp']=LastInfo['LastTimeStamp']
+    writeTradeJournal(TradeInfo,SetUp)
+    return TradeInfo
 
+def writeTradeJournal(TradeInfo,SetUp):
+    # Initialize or load trade Information (pickle)
+    if not os.path.isfile(SetUp['paths']["Journal"]):
+        TradeInfo=initTradeFiles(SetUp)
+    else:
+        # Write data to file
+        listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
+                "shareBuy","chfShort","shareShort","currStopLoss",
+                "currStopLossLimit",'currStopLossId','currLimit',
+                'currLimitLimit','currLimitId','BNBcomm']
+        towrite=[TradeInfo[i] for i in listKeys]
+        f = open(SetUp['paths']["Journal"], 'a')
+        wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+        wr.writerow(towrite)
+        f.close()
+    return TradeInfo
+
+def initTradeFiles(SetUp):
+    # Initialize or load trade Information (pickle)
+    if not os.path.isfile(SetUp['paths']["TradeInfo"]+'.pkl'):
+        CurrTradeInfo = {'CloseTimeStamp':None,"Signal":None,"action":[],
+                'Funds':None,'chfBuy':None,'shareBuy':None,'chfShort':None,
+                'shareShort':None, 'currStopLoss':None,'currStopLossLimit':None,
+                'currStopLossId':None,'currLimit':None,'currLimitLimit':None,
+                'currLimitId':None,'BNBcomm':0}
+        save_obj(CurrTradeInfo,SetUp['paths']["TradeInfo"])
+    else:
+        CurrTradeInfo = load_obj(SetUp['paths']["TradeInfo"])
+    if not os.path.isfile(SetUp['paths']["Journal"]):
+        # Write data to file
+        listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
+        "shareBuy","chfShort","shareShort","currStopLoss",
+        "currStopLossLimit",'currStopLossId','currLimit',
+        'currLimitLimit','currLimitId','BNBcomm']
+        writeOption = 'w'
+        f = open(SetUp['paths']["Journal"], writeOption)
+        wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+        wr.writerow(listKeys)
+        f.close()
+    return CurrTradeInfo
  # # # # # # # # # 
 # Market Buy order 
 # ----------------

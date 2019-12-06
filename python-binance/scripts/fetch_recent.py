@@ -18,7 +18,7 @@ securePath="/Users/yangsi/Box Sync/Crypto/secure/"
 csvwritepath="/Users/yangsi/Box Sync/Crypto/scripts/python-binance/Data/"
 
 
-def main(args):
+def main(SetUp,args):
     parser = argparse.ArgumentParser(description='Get ticker data.')
     parser.add_argument('-window', type=int, default=1, help='return last n rows')
     parser.add_argument('-tickDt', type=str,choices=["1m","15m", "30m", "1h", "2h", "4h",
@@ -26,18 +26,14 @@ def main(args):
     parser.add_argument('-pair', type=str,choices=["BTCUSDT"],default="BTCUSDT")
     args = parser.parse_args(args)
 
-    #Paths to csvs and pickles
-    ffile="Bin" + args.pair + args.tickDt + ".csv"
-    csvfile=csvwritepath + ffile
-
-    if not os.path.isfile(csvfile):
+    if not os.path.isfile(SetUp['paths']['Hist']):
         print(ffile + " does not exist. Rerun with -update False to create it.")
     
-    if  os.path.isfile(csvfile):
-        with open(csvfile,'r') as f:
+    if  os.path.isfile(SetUp['paths']['Hist']):
+        with open(SetUp['paths']['Hist'],'r') as f:
             r=csv.reader(f,delimiter=',')
             row_count = sum(1 for row in r)
-        with open(csvfile,'r') as f:
+        with open(SetUp['paths']['Hist'],'r') as f:
             r=csv.reader(f,delimiter=',')
             row=[];
             for i in range(row_count): # count from 0 to 7

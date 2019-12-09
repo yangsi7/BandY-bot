@@ -30,7 +30,6 @@ def main(args):
 
     # Last timestamp of database to check for corruption
     binInfoPath=SetUp["paths"]["csvwrite"] + "Binance" + args.tickDt
-
     if not isCorrupt(SetUp["paths"]["Hist"],binInfoPath):
         BinInfo = load_obj(binInfoPath)
         tt=datetime.fromtimestamp(BinInfo['LastTimeStamp']-3600*24)
@@ -48,26 +47,26 @@ def main(args):
     # Write data to file
     if not isCorrupt(SetUp["paths"]["Hist"],binInfoPath):
         idx = ticks.CloseTimeStamp.index(round(BinInfo['LastTimeStamp']))
-        writeTocsv(listTocsv[idx+1:],SetUp["paths"]["Hist"],'a')
-        if len(listTocsv[idx+1:])==0:
+        writeTocsv(listTocsv[idx+1:-1],SetUp["paths"]["Hist"],'a')
+        if len(listTocsv[idx+1:])<=1:
             print("---" + args.pair + args.tickDt + " is up to date!")
         else:
             print("---Last update to " + args.pair + args.tickDt + " was on the " + BinInfo['LastDateStr'])
             print("------")        
-            print("Updating " + str(len(listTocsv[idx+1:]) 
+            print("Updating " + str(len(listTocsv[idx+1:-1]) 
              ) + " " + args.tickDt + " ticks")         
         BinInfo={}
     else:
         a = ["OpenTimeStamp","Open","High","Low","Close","Volume","CloseTimeStamp"]
         a.append(listTocsv)
-        writeTocsv(listTocsv,SetUp["paths"]["Hist"],'w')
-
-    BinInfo['LastTimeStamp']=ticks.CloseTimeStamp[-1]        
-    tt=ticks.CloseDate[-1]
+        writeTocsv(listTocsv[:-1],SetUp["paths"]["Hist"],'w')
+    BinInfo={}
+    BinInfo['LastTimeStamp']=ticks.CloseTimeStamp[-2]        
+    tt=ticks.CloseDate[-2]
     BinInfo['LastDateStr']=str(tt.day)+' '+tt.strftime('%b')+', '+str(tt.year)
     save_obj(BinInfo,binInfoPath)
 
-    return listTocsv[-1]
+    return listTocsv[-2]
 
 # Functions and Classes
 def save_obj(obj, path):

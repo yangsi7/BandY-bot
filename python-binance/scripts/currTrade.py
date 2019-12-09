@@ -65,8 +65,11 @@ def TakeAction(TradeInfo,signal,SetUp):
     print('---Hotness index is .......'+str(round(signal,2)))
     print('-----')
     print('')
-    if TradeInfo['currLimit']==None and TradeInfo['currStopLoss']==None and 0.2<signal <0.8:
-        TradeInfo['action'].append(None)
+    TradeInfo['signal']=signal
+    if TradeInfo['currLimitId']==None and TradeInfo['currStopLossId']==None \
+            and 0.2<signal <0.8 or signal<0.2 and TradeInfo['shareBuy']!= None\
+            or signal >0.8 and TradeInfo['shareShort'] != None:
+        TradeInfo['action']=[]
         print('--> No action taken')
     #-------------
     #--Close Buy
@@ -81,15 +84,17 @@ def TakeAction(TradeInfo,signal,SetUp):
     #-------------
     #--Update Stop-limit-sell
     #-------------
-    if TradeInfo['shareBuy'] != None and TradeInfo['currStopLoss']!=None:
+    if TradeInfo['shareBuy'] != None and TradeInfo['currStopLossId']!=None:
         print('---Updating the existing stop-limit sell order...')
         print('')
         TradeInfo['action'].append('Update stop-limit-sell')
-        TradeInfo=updateLimitOrder(SetUp,TradeInfo)
+        TradeInfo=updateStopLoss(SetUp,TradeInfo)
+        if TradeInfo['currStopLossId']==None:
+            TradeInfo['action'].append('buy-closed')
     #-------------
     #--Close short
     #-------------
-    if TradeInfo['shareShort'] != None and TradeInfo['currLimit']==None and signal<=0.2:
+    if TradeInfo['shareShort'] != None and TradeInfo['currLimitId']==None and signal<=0.2:
         print('---Index is getting hot!')
         print('------')
         print('---Setting a stop-limit to close the short order...')
@@ -99,11 +104,13 @@ def TakeAction(TradeInfo,signal,SetUp):
     #-------------
     #--Update Stop-limit-buy
     #-------------
-    if TradeInfo['shareShort'] != None and TradeInfo['currLimit']!=None:
+    if TradeInfo['shareShort'] != None and TradeInfo['currLimitId']!=None:
         print('---Updating the existing stop-limit buy order...')
         print('')
         TradeInfo['action'].append('Update stop-limit-buy')
-        TradeInfo=updateStopLoss(SetUp,TradeInfo)
+        TradeInfo=updateLimitOrder(SetUp,TradeInfo)
+        if TradeInfo['currLimitId']==None:
+            TradeInfo['action'].append('short-closed')        
     #-------------
     #--Buy
     #-------------
@@ -136,7 +143,7 @@ def writeTradeJournal(TradeInfo,SetUp):
         # Write data to file
         listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
                 "shareBuy","chfShort","shareShort","currStopLoss",
-                "currStopLossLimit",'currStopLossId','currLimit',
+                "currStopLossLimit",'currStopLossId','currLimitStop',
                 'currLimitLimit','currLimitId','BNBcomm']
         towrite=[TradeInfo[i] for i in listKeys]
         f = open(SetUp['paths']["Journal"], 'a')
@@ -151,7 +158,7 @@ def initTradeFiles(SetUp):
         CurrTradeInfo = {'CloseTimeStamp':None,"Signal":None,"action":[],
                 'Funds':None,'chfBuy':None,'shareBuy':None,'chfShort':None,
                 'shareShort':None, 'currStopLoss':None,'currStopLossLimit':None,
-                'currStopLossId':None,'currLimit':None,'currLimitLimit':None,
+                'currStopLossId':None,'currLimitStop':None,'currLimitLimit':None,
                 'currLimitId':None,'BNBcomm':0}
         save_obj(CurrTradeInfo,SetUp['paths']["TradeInfo"])
     else:
@@ -160,7 +167,7 @@ def initTradeFiles(SetUp):
         # Write data to file
         listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
         "shareBuy","chfShort","shareShort","currStopLoss",
-        "currStopLossLimit",'currStopLossId','currLimit',
+        "currStopLossLimit",'currStopLossId','currLimitStop',
         'currLimitLimit','currLimitId','BNBcomm']
         writeOption = 'w'
         f = open(SetUp['paths']["Journal"], writeOption)
@@ -176,7 +183,7 @@ def buyOrder(SetUp,TradeInfo):
     client = Client(apiK[0], apiK[1])
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
     LastPrice=float(tmp['lastPrice'])
-    TradeInfo['shareBuy'] =binFloat(TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]/LastPrice,5)
+    TradeInfo['shareBuy'] =binFloat(TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]/LastPrice)
     TradeInfo['chfBuy'] = binFloat(TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"])
     order = client.order_market_buy(
     symbol=SetUp["trade"]["pair"],
@@ -302,7 +309,7 @@ def stopLoss(SetUp,TradeInfo):
 def LimitOrder(SetUp,TradeInfo):
     # use implicit Falsness of empty lists
     if TradeInfo['currLimitId']!=None:
-        print('Current Limit Order (Id='+str(TradeInfo['currLimit'])+') exists')
+        print('Current Limit Order (Id='+str(TradeInfo['currLimitId'])+') exists')
         print('No action taken')
         return TradeInfo
     # Open Binance client
@@ -427,7 +434,6 @@ def updateLimitOrder(SetUp,TradeInfo):
     order = client.get_margin_order(
     symbol=SetUp["trade"]["pair"],
     orderId=TradeInfo['currLimitId'])
-    order['status'] ='FILLED'
     if order['status'] == 'FILLED':
         #(1) Get buy info
         #(2) Check if enough coins to pay back loan
@@ -496,7 +502,8 @@ def updateLimitOrder(SetUp,TradeInfo):
             TradeInfo['chfShort'] = 0
             TradeInfo['shareShort'] = 0
             TradeInfo['currLimitId'] = None
-            TradeInfo['currLimit'] = None                
+            TradeInfo['currLimitLimit']=None
+            TradeInfo['currLimitStop'] = None                
     elif order['status'] == 'PARTIALLY_FILLED':
         print('Limit Order is getting filled')
         print('--> do nothing for now...')
@@ -511,6 +518,8 @@ def updateLimitOrder(SetUp,TradeInfo):
                     )
             print('Order cancelled. Starting new order...')
             TradeInfo['currLimitId']=None
+            TradeInfo['currLimitStop']=None
+            TradeInfo['currLimitLimit']=None
             # Set new stop-limit-order       
             TradeInfo=LimitOrder(SetUp,TradeInfo)
     else:

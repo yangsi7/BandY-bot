@@ -16,6 +16,7 @@ import matlab.engine
 import pandas as pd
 import initBot as ini
 import currTrade
+import plotYangino
 
 """Module summary
 This script runs the incredible Yangino Bot, hoping to 
@@ -45,9 +46,12 @@ def main():
     TradeInfo=currTrade.initTradeFiles(SetUp)
     if TradeInfo['Funds']==None:
         TradeInfo['Funds']=SetUp['trade']['StartFunds']
+    else:
+        TradeInfo = load_obj(SetUp['paths']['TradeInfo'])
 
+    NewTicker = False
     while True:
-        if TradeInfo['CloseTimeStamp'] != None:
+        if TradeInfo['CloseTimeStamp'] != None and not NewTicker:
             # Wait for next ticker
             waitForTicker()
             # Start checking
@@ -59,23 +63,11 @@ def main():
 
             signal = fireSig(SetUp)
             TradeInfo=currTrade.TakeAction(TradeInfo,signal,SetUp)
+            save_obj(TradeInfo,SetUp['paths']['TradeInfo'])
+            NewTicker = False
+            plotYangino.plotBot()
+            time.sleep(5*60)
 
-
-# Strategy done in matlab
-# Now    while True:
-        if TradeInfo['CloseTimeStamp'] != None:
-            # Wait for next ticker
-            waitForTicker()
-            # Start checking
-            TradeInfo=CheckNew(SetUp,TradeInfo)
-            if not NewTicker:
-                print('Error: did not find new ticks')
-                break
-            else:
-                print("New tick is "+ str(out(2)))
-        else:
-            signal = fireSig(SetUp)
-            currTrade.TakeAction(TradeInfo,signal,SetUp) need function to
 
     # (1) Check for existing trades()
     # (2) Start orders if needed
@@ -97,7 +89,7 @@ def main():
 
 def waitForTicker():
     x=datetime.today()
-    y=x.replace(day=x.day, hour=x.hour, minute=58, second=0, microsecond=0)
+    y=x.replace(day=x.day, hour=x.hour, minute=59, second=30, microsecond=0)
     delta_t=y-x
     secs=delta_t.seconds+1
     secWakeUp=60 # Wake up this many seconds before
@@ -135,18 +127,18 @@ def CheckNew(SetUp,TradeInfo):
     starttime=time.time()
     while time.time()-starttime < 240:
         iter=iter+1
-        try:
-            Tick = fetch_historical.main([
-                '-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"],'-no-verbose'])
-        finally:
-            LastInfo=load_obj(SetUp['paths']["LastInfo"])
-        if TradeInfo['CloseTimeStamp'] != LastInfo['LastTimeStamp']:
+        Tick = fetch_historical.main([
+            '-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"]])
+        LastInfo=load_obj(SetUp['paths']["LastInfo"])
+
+        if TradeInfo['CloseTimeStamp'] == LastInfo['LastTimeStamp']:
             if iter == 1: 
                 print("Start checking for new ticker")
                 print("No new ticker yet",end='')
             else:
                 sys.stdout.write('.')
                 sys.stdout.flush()
+            NewTicker=False    
             time.sleep(10.0 - ((time.time() - starttime) % 10.0))
         else:
             print("")

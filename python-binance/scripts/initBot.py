@@ -8,7 +8,7 @@ def initSetUp():
     SetUp['paths']["csvwrite"]="/Users/yangsi/Box Sync/Crypto/scripts/python-binance/Data/"
     SetUp['paths']["trade"]="/Users/yangsi/Box Sync/Crypto/scripts/python-binance/tradeData/"
     SetUp['paths']["matlab"]="/Users/yangsi/Box Sync/Crypto/scripts/functions/"
-    SetUp['paths']["model"]="/Users/yangsi/Box Sync/Crypto/scripts/models/fre_26Nov2019.mat"
+    SetUp['paths']["model"]="/Users/yangsi/Box Sync/Crypto/scripts/models/fre_11Dec2019.mat"
     SetUp["trade"]["Case"]="Dec2019"
 
     # General Parameters

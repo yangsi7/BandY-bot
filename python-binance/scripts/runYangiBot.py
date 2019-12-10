@@ -49,7 +49,7 @@ def main():
     else:
         TradeInfo = load_obj(SetUp['paths']['TradeInfo'])
 
-    NewTicker = False
+    NewTicker = True
     while True:
         if TradeInfo['CloseTimeStamp'] != None and not NewTicker:
             # Wait for next ticker

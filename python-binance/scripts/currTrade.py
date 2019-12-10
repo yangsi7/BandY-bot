@@ -65,7 +65,6 @@ def TakeAction(TradeInfo,signal,SetUp):
     print('---Hotness index is .......'+str(round(signal,2)))
     print('-----')
     print('')
-    TradeInfo['signal']=signal
     if TradeInfo['currLimitId']==None and TradeInfo['currStopLossId']==None \
             and 0.2<signal <0.8 or signal<0.2 and TradeInfo['shareBuy']!= None\
             or signal >0.8 and TradeInfo['shareShort'] != None:
@@ -132,6 +131,7 @@ def TakeAction(TradeInfo,signal,SetUp):
     # Write trade journal
     LastInfo = load_obj(SetUp['paths']["LastInfo"])
     TradeInfo['CloseTimeStamp']=LastInfo['LastTimeStamp']
+    TradeInfo['Signal']=signal
     writeTradeJournal(TradeInfo,SetUp)
     return TradeInfo
 

@@ -49,7 +49,7 @@ def main():
     else:
         TradeInfo = load_obj(SetUp['paths']['TradeInfo'])
 
-    NewTicker = True
+    NewTicker = False
     while True:
         if TradeInfo['CloseTimeStamp'] != None and not NewTicker:
             # Wait for next ticker
@@ -61,8 +61,8 @@ def main():
                 break
         else:
 
-            signal = fireSig(SetUp)
-            TradeInfo=currTrade.TakeAction(TradeInfo,signal,SetUp)
+            signal,BB = fireSig(SetUp)
+            TradeInfo=currTrade.TakeAction(TradeInfo,signal,BB,SetUp)
             save_obj(TradeInfo,SetUp['paths']['TradeInfo'])
             NewTicker = False
             plotYangino.plotBot()
@@ -110,16 +110,19 @@ def fireSig(SetUp):
     # call matlab scripts 
     eng = matlab.engine.start_matlab()
     eng.addpath(SetUp["paths"]["matlab"])
-    nrows = int(eng.getMaxWinForPython('model',SetUp["paths"]["model"]))
-    rows = fetch_recent.main(SetUp,['-window',str(nrows+1)])
-    rows = [[float(i) for i in j] for j in rows]
+#    nrows = int(eng.getMaxWinForPython('model',SetUp["paths"]["model"]))
+#    rows = fetch_recent.main(SetUp,['-window',str(nrows+1)])
+#    rows = [[float(i) for i in j] for j in rows]
     try:
         # Fire Buy/Short/Sell signals
-        signal = eng.fireSigForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
+#        signal = eng.fireSigForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
+        sig = eng.FireSignalWithBB('model',SetUp["paths"]["model"])
+        signal=float(sig[0][0])
+        BB=int(sig[0][1])
     except:
         print("Unexpected error:", sys.exc_info()[0])
     eng.quit()
-    return signal
+    return signal,BB
 
 def CheckNew(SetUp,TradeInfo):
     NewTicker=False

@@ -60,14 +60,18 @@ import initBot as ini
 #            # stopLoss
 #            # updateStopLoss (need to see if it fails or not when limit is hit)
 #            # shortrder
-def TakeAction(TradeInfo,signal,SetUp):
+def TakeAction(TradeInfo,signal,BB,SetUp):
+    BBstr = 'Bullish' if BB == 1 else 'Bearish'
     print('-----')
-    print('---Hotness index is .......'+str(round(signal,2)))
+    print('---Hotness index is .......'+str(round(signal,2))+' and market is *'+BBstr+'*.')
+
     print('-----')
     print('')
-    if TradeInfo['currLimitId']==None and TradeInfo['currStopLossId']==None \
-            and 0.2<signal <0.8 or signal<0.2 and TradeInfo['shareBuy']!= None\
-            or signal >0.8 and TradeInfo['shareShort'] != None:
+    if (TradeInfo['currLimitId']==None and 
+            TradeInfo['currStopLossId']==None and
+            (0.2<signal < 0.8 or 
+                (signal < 0.2 and (TradeInfo['shareBuy']!= None or BB == 0)) or
+                (signal > 0.8 and (TradeInfo['shareShort'] != None or BB == 1)))):
         TradeInfo['action']=[]
         print('--> No action taken')
     #-------------
@@ -113,8 +117,8 @@ def TakeAction(TradeInfo,signal,SetUp):
     #-------------
     #--Buy
     #-------------
-    if TradeInfo['shareBuy'] == None and signal<=0.2:
-        print('---Index is getting hot!')
+    if TradeInfo['shareBuy'] == None and signal <= 0.2 and BB == 1:
+        print('---BB is bullish and index is getting hot!')
         print('------')
         print('---Starting a buy order...')
         TradeInfo['action'].append('Buy')
@@ -122,8 +126,8 @@ def TakeAction(TradeInfo,signal,SetUp):
     #-------------
     #--Short
     #-------------
-    if TradeInfo['shareShort'] == None and signal>=0.8:
-        print('---Index is getting cold!')
+    if TradeInfo['shareShort'] == None and signal>=0.8 and BB == 0:
+        print('---BB is bearish and Index is getting cold!')
         print('------')
         print('---Starting a short order...')
         TradeInfo['action'].append('Sell')
@@ -132,6 +136,7 @@ def TakeAction(TradeInfo,signal,SetUp):
     LastInfo = load_obj(SetUp['paths']["LastInfo"])
     TradeInfo['CloseTimeStamp']=LastInfo['LastTimeStamp']
     TradeInfo['Signal']=signal
+    TradeInfo['BB']=BB
     writeTradeJournal(TradeInfo,SetUp)
     return TradeInfo
 
@@ -144,7 +149,7 @@ def writeTradeJournal(TradeInfo,SetUp):
         listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
                 "shareBuy","chfShort","shareShort","currStopLoss",
                 "currStopLossLimit",'currStopLossId','currLimitStop',
-                'currLimitLimit','currLimitId','BNBcomm']
+                'currLimitLimit','currLimitId',"BB","buyProfit","shortProfit",'BNBcomm']
         towrite=[TradeInfo[i] for i in listKeys]
         f = open(SetUp['paths']["Journal"], 'a')
         wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
@@ -159,7 +164,8 @@ def initTradeFiles(SetUp):
                 'Funds':None,'chfBuy':None,'shareBuy':None,'chfShort':None,
                 'shareShort':None, 'currStopLoss':None,'currStopLossLimit':None,
                 'currStopLossId':None,'currLimitStop':None,'currLimitLimit':None,
-                'currLimitId':None,'BNBcomm':0}
+                'currLimitId':None,'BB':None, 'buyProfit':None,'shortProfit':None,
+                'BNBcomm':0}
         save_obj(CurrTradeInfo,SetUp['paths']["TradeInfo"])
     else:
         CurrTradeInfo = load_obj(SetUp['paths']["TradeInfo"])
@@ -168,7 +174,7 @@ def initTradeFiles(SetUp):
         listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
         "shareBuy","chfShort","shareShort","currStopLoss",
         "currStopLossLimit",'currStopLossId','currLimitStop',
-        'currLimitLimit','currLimitId','BNBcomm']
+        'currLimitLimit','currLimitId','BB','buyProfit','shortProfit','BNBcomm']
         writeOption = 'w'
         f = open(SetUp['paths']["Journal"], writeOption)
         wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)

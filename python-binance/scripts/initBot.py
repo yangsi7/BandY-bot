@@ -20,7 +20,7 @@ def initSetUp():
     SetUp["trade"]["TFee"]=0.075
 
     # Trading parameters
-    SetUp["trade"]["StartFunds"]=200
+    SetUp["trade"]["StartFunds"]=400
     SetUp["trade"]["PercentFunds"]=0.5
     SetUp["trade"]["SLTresh"]=0.019
     SetUp["trade"]["LOTresh"]=0.019

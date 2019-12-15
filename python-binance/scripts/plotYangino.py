@@ -12,7 +12,7 @@ import plotFunction
 import csv
 
 def plotBot():
-    winDays=7
+    winDays=14
     
     winHours=winDays*24
     SetUp = ini.initSetUp()
@@ -45,7 +45,9 @@ def plotBot():
                      float(kurse_c[i])]) for i in range(len(dates))] #_1
     
     ToplotAr=plotFunction.plotAr(Toplot)
-    histsig=np.asarray(plotFunction.getSig(SetUp,JournFull,winHours))
+    a,b=plotFunction.getSig(SetUp,JournFull,winHours)
+    histsig = np.asarray(a)
+    BB = np.asarray(b)
     ii=[]
     for i in range(0,len(Journ['time'])):
         ii.append(datesFloat.index(Journ['time'][i]))
@@ -119,5 +121,6 @@ def plotBot():
     ax5.set_xticklabels(a)
     ax5.tick_params(labelrotation=45)
     plt.savefig('/Users/yangsi/Box Sync/Crypto/scripts/figures/BotJournal.pdf')
+    plt.clf()
 
 

@@ -37,18 +37,19 @@ def plotAr(Toplot):
 
 def getSig(SetUp,jJourn,winHours):
     # call matlab scripts
+    
     eng = matlab.engine.start_matlab()
     eng.addpath(SetUp["paths"]["matlab"])
-    nrows = int(eng.getMaxWinForPython('model',SetUp["paths"]["model"]))
-    rows = fetch_recent.main(SetUp,['-window',str(nrows+winHours)])
-    rows = [[float(i) for i in j] for j in rows]
     try:
         # Fire Buy/Short/Sell signals
-        signal = eng.getHotnessForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
+#        signal = eng.fireSigForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
+        sig = eng.FireSignalWithBB('model',SetUp["paths"]["model"],'Xwin',winHours)
+        signal=[float(i[0]) for i in sig]
+        BB=[int(i[1]) for i in sig]   
     except:
         print("Unexpected error:", sys.exc_info()[0])
     eng.quit()
-    return signal
+    return signal,BB
 
 def csvreadEnd(csvfile):
  # Reads the last nrows of a csv file

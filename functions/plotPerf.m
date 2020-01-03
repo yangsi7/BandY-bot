@@ -29,7 +29,7 @@ end
 if strcmp(A.method,'fitrensemble')
         figure
 	subplot(2,1,1)
-	candle(tmw);hold on;grid on;
+	%candle(tmw);hold on;grid on;
 	plot(tmw.Time,tmw.hlc,'k','LineWidth',2); hold off;
 	subplot(2,1,2)
 	plot(tmw.Time,tmw.priceNorm,'k','LineWidth',2);hold on;grid on;

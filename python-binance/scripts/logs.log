@@ -1,0 +1,31 @@
+2019-12-22 02:48:06,700:DEBUG: Starting new HTTPS connection (1): api.binance.com:443
+2019-12-22 02:48:07,301:DEBUG: https://api.binance.com:443 "GET /api/v1/ping HTTP/1.1" 200 None
+2019-12-22 02:48:07,579:DEBUG: https://api.binance.com:443 "GET /api/v1/klines?interval=1h&limit=1&startTime=0&symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:48:07,776:DEBUG: https://api.binance.com:443 "GET /api/v1/klines?interval=1h&limit=500&startTime=1576886400000&symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:48:41,409:DEBUG: Starting new HTTPS connection (1): api.binance.com:443
+2019-12-22 02:48:41,792:DEBUG: https://api.binance.com:443 "GET /api/v1/ping HTTP/1.1" 200 None
+2019-12-22 02:48:41,934:DEBUG: https://api.binance.com:443 "GET /api/v1/ticker/24hr?symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:48:42,278:DEBUG: https://api.binance.com:443 "GET /api/v3/order?orderId=925605174&symbol=BTCUSDT&timestamp=1576957721936&signature=22113e4614eda7bdee2eb46792857b2ec65bb4acd8b8d60c12e934661a296b5e HTTP/1.1" 200 None
+2019-12-22 02:48:42,650:DEBUG: https://api.binance.com:443 "DELETE /api/v3/order HTTP/1.1" 200 None
+2019-12-22 02:48:42,665:DEBUG: Starting new HTTPS connection (1): api.binance.com:443
+2019-12-22 02:48:42,982:DEBUG: https://api.binance.com:443 "GET /api/v1/ping HTTP/1.1" 200 None
+2019-12-22 02:48:43,141:DEBUG: https://api.binance.com:443 "GET /api/v1/ticker/24hr?symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:48:43,301:DEBUG: https://api.binance.com:443 "POST /api/v3/order HTTP/1.1" 200 None
+2019-12-22 02:54:11,583:DEBUG: Starting new HTTPS connection (1): api.binance.com:443
+2019-12-22 02:54:12,277:DEBUG: https://api.binance.com:443 "GET /api/v1/ping HTTP/1.1" 200 None
+2019-12-22 02:54:12,558:DEBUG: https://api.binance.com:443 "GET /api/v1/klines?interval=1h&limit=1&startTime=0&symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:54:12,690:DEBUG: https://api.binance.com:443 "GET /api/v1/klines?interval=1h&limit=500&startTime=1576886400000&symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:54:46,156:DEBUG: Starting new HTTPS connection (1): api.binance.com:443
+2019-12-22 02:54:46,470:DEBUG: https://api.binance.com:443 "GET /api/v1/ping HTTP/1.1" 200 None
+2019-12-22 02:54:46,603:DEBUG: https://api.binance.com:443 "GET /api/v1/ticker/24hr?symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:54:46,747:DEBUG: https://api.binance.com:443 "GET /api/v3/order?orderId=925618920&symbol=BTCUSDT&timestamp=1576958086604&signature=2f01798f6c185eabf9915c6c05c9a298b95613ef3e45a192d6de8189d7feef53 HTTP/1.1" 200 None
+2019-12-22 02:54:47,039:DEBUG: https://api.binance.com:443 "DELETE /api/v3/order HTTP/1.1" 200 None
+2019-12-22 02:54:47,042:DEBUG: Starting new HTTPS connection (1): api.binance.com:443
+2019-12-22 02:54:47,347:DEBUG: https://api.binance.com:443 "GET /api/v1/ping HTTP/1.1" 200 None
+2019-12-22 02:54:47,484:DEBUG: https://api.binance.com:443 "GET /api/v1/ticker/24hr?symbol=BTCUSDT HTTP/1.1" 200 None
+2019-12-22 02:54:47,631:DEBUG: https://api.binance.com:443 "POST /api/v3/order HTTP/1.1" 200 None
+2019-12-22 02:55:22,754:DEBUG: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/Users/yangsi/Dev/.virtualenvs/djangodev/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+2019-12-22 02:55:22,763:DEBUG: Assigning font /b'F1' = '/Users/yangsi/Dev/.virtualenvs/djangodev/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf'
+2019-12-22 02:55:22,886:DEBUG: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0 to DejaVu Sans ('/Users/yangsi/Dev/.virtualenvs/djangodev/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+2019-12-22 02:55:22,984:DEBUG: Embedding font /Users/yangsi/Dev/.virtualenvs/djangodev/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf.
+2019-12-22 02:55:22,985:DEBUG: Writing TrueType font.

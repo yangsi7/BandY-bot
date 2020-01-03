@@ -20,13 +20,22 @@ def initSetUp():
     SetUp["trade"]["TFee"]=0.075
 
     # Trading parameters
-    SetUp["trade"]["StartFunds"]=400
+    SetUp["trade"]["StartFunds"]=413.85
     SetUp["trade"]["PercentFunds"]=0.5
-    SetUp["trade"]["SLTresh"]=0.019
-    SetUp["trade"]["LOTresh"]=0.019
-    SetUp["trade"]["SLlimit"]=0.025
-    SetUp["trade"]["LOlimit"]=0.025
+    SetUp["trade"]["SLTresh"]=0.0075
+    SetUp["trade"]["LOTresh"]=0.0075
+    SetUp["trade"]["SLlimit"]=0.02
+    SetUp["trade"]["LOlimit"]=0.02
+    SetUp["trade"]["SLTresh2"]=0.02
+    SetUp["trade"]["LOTresh2"]=0.02
+    SetUp["trade"]["SLlimit2"]=0.03
+    SetUp["trade"]["LOlimit2"]=0.03
     SetUp["trade"]["Slip"]=1.005
+    SetUp["trade"]["sellSig"]=0.6
+    SetUp["trade"]["shortSig"]=0.7
+    SetUp["trade"]["buySig"]=0.2
+    SetUp["trade"]["closeShortSig"]=0.2
+
 
 
 

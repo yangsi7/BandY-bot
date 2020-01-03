@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+sys.path.append('/Users/yangsi/Box Sync/Crypto/scripts/python-binance/scripts')
 import pandas as pd
 from datetime import datetime
 import matplotlib
@@ -17,7 +19,7 @@ def plotBot():
     winHours=winDays*24
     SetUp = ini.initSetUp()
     rows = fetch_recent.main(SetUp,['-window',str(winHours)])
-    Toplot,JournFull,Journ,ToplotFar=plotFunction.getJournal(SetUp)
+    Journ=plotFunction.getJournal(SetUp)
     
     ccandles=[]
     for i in range(0,len(rows[0])):
@@ -37,6 +39,7 @@ def plotBot():
     kurse_l=ccandles[3]
     kurse_c=ccandles[4]
     kurse_c_float=[float(kurse_c[i]) for i in range(len(dates))]
+    Price=np.array(kurse_c_float,dtype=np.float32)
     
     quotes = [tuple([float(dates[i]),
                      float(kurse_o[i]),
@@ -44,17 +47,18 @@ def plotBot():
                      float(kurse_l[i]),
                      float(kurse_c[i])]) for i in range(len(dates))] #_1
     
-    ToplotAr=plotFunction.plotAr(Toplot)
-    a,b=plotFunction.getSig(SetUp,JournFull,winHours)
-    histsig = np.asarray(a)
-    BB = np.asarray(b)
+    a,b=plotFunction.getSig(SetUp,winHours)
+    histsig = np.array(a,dtype=np.float32)
+    BB = np.array(b,dtype=int)
     ii=[]
     for i in range(0,len(Journ['time'])):
         ii.append(datesFloat.index(Journ['time'][i]))
         Journ_price=[kurse_c_float[i] for i in ii]
     Journ_price=np.array(Journ_price,dtype=np.float32)
     
-    TotFunds=Toplot["Funds"]+sum(ToplotFar['shareBuy']*Journ_price)+sum(ToplotFar['chfShort'])-sum(ToplotFar['shareShort']*Journ_price)
+    funds=Journ["Funds"]
+    chfbuy=(Journ['shareBuy']*Journ_price)[Journ['Buys_idx']]
+    TotFunds=Journ["Funds"]+Journ['shareBuy']*Journ_price+Journ['chfShort']-Journ['shareShort']*Journ_price
     
     
     fig = plt.figure(figsize=(15, 8))
@@ -72,37 +76,29 @@ def plotBot():
     plt.title('Total Funds (equivalent USDT)')
     
     cl = candlestick_ohlc(ax1,quotes, width=0.8, colorup='k', colordown='k', alpha=1.0)
-    if ToplotAr['Buys_time'].size>0:
-        ax1.scatter(ToplotAr['Buys_time'],ToplotAr['Buys_chf']/ToplotAr['Buys_share'], color='g',marker='^',edgecolors='k',s=30)
-    if ToplotAr['BC_time']!=None:
-        ii=[]
-        for i in range(0,len(ToplotAr['BC_time'])):
-            ii.append(datesFloat.index(ToplotAr['BC_time'][i]))
-        BC_price=[kurse_c_float[i] for i in ii]
-        ax1.scatter(ToplotAr['BC_time'],BC_price, color='g',marker='v',edgecolors='k',s=30)
-    if ToplotAr['Shorts_time'][0]!=None:
-        ax1.scatter(ToplotAr['Shorts_time'],ToplotAr['Short_chf']/ToplotAr['Short_share'], color='r',marker='v',edgecolors='k',s=30)
-    if ToplotAr['SC_time']!=None:
-        ii=[]
-        for i in range(0,len(ToplotAr['SC_time'])):
-            ii.append(datesFloat.index(ToplotAr['SC_time'][i]))
-        SC_price=[kurse_c_float[i] for i in ii]
-        ax1.scatter(ToplotAr['SC_time'],SC_price, color='r',marker='^',edgecolors='k',s=30)
-    if ToplotAr['SL_time']!=None:
-        SLtime=np.array([i for i in range(int(ToplotAr['SL_time']),int(Journ["time"][-1])+1)],dtype=np.float32)
-        SLprice=np.array([float(ToplotAr['SL']) for i in range(int(ToplotAr['SL_time']),int(Journ["time"][-1])+1)],dtype=np.float32)
-        SLLprice=np.array([float(ToplotAr['SLL']) for i in range(int(ToplotAr['SL_time']),int(Journ["time"][-1])+1)],dtype=np.float32)
-        ax1.plot(SLtime,SLprice,'og--', linewidth=1)
-        ax1.plot(SLtime,SLLprice,'og', linewidth=1)
-    if ToplotAr['LO_time']!=None:
-        SLtime=np.array([i for i in range(ToplotAr['LO_time'],int(Journ["time"][-1]))],dtype=np.float32)
-        SLprice=np.array([float(ToplotAr['LO']) for i in range(int(ToplotAr['LO_time']),int(Journ["time"][-1])+1)],dtype=np.float32)
-        SLLprice==np.array([float(ToplotAr['LOL']) for i in range(int(ToplotAr['LO_time']),int(Journ["time"][-1])+1)],dtype=np.float32)
-        ax1.plot(SLtime,SLprice,'or--', linewidth=1)
-        ax1.plot(SLtime,SLLprice,'or', linewidth=1)
+    if Journ["Buys_idx"].size>0:
+        idx=Journ["Buys_idx"]
+        ax1.scatter(Journ['time'][idx],Journ["chfBuy"][idx]/Journ["shareBuy"][idx], color='g',marker='^',edgecolors='k',s=30)
+    if Journ["BC_idx"].size>0:
+        idx=Journ["BC_idx"]
+        ax1.scatter(Journ['time'][idx],Price[idx], color='g',marker='v',edgecolors='k',s=30)
+    if Journ["Shorts_idx"].size>0:
+        idx=Journ["Shorts_idx"]
+        ax1.scatter(Journ['time'][idx],Journ["chfShort"][idx]/Journ["shareShort"][idx], color='r',marker='v',edgecolors='k',s=30)
+    if Journ["SC_idx"].size>2:
+        idx=Journ["SC_idx"]
+        ax1.scatter(Journ['time'][idx],Price[idx], color='r',marker='^',edgecolors='k',s=30)
+    if Journ["SL_idx"].size>0:
+        idx=Journ["SL_idx"]
+        ax1.plot(Journ['time'][idx],Journ["currStopLoss"][idx],'+g--', linewidth=1)
+        ax1.plot(Journ['time'][idx],Journ["currStopLossLimit"][idx],'+g', linewidth=1)
+    if Journ["LO_idx"].size>0:
+        idx = Journ["LO_idx"]
+        ax1.plot(Journ['time'][idx],Journ["currLimitStop"][idx],'+r--', linewidth=1)
+        ax1.plot(Journ['time'][idx],Journ["currLimitLimit"][idx],'+r', linewidth=1)
     
     ax2.plot(datesFloat,histsig[-len(datesFloat):])
-    ax2.plot(np.array(Journ["time"],dtype=np.float32),np.array(Journ["signal"],dtype=np.float32))
+    ax2.plot(Journ["time"],Journ["signal"])
     
     a=ax1.get_xticks().tolist()
 

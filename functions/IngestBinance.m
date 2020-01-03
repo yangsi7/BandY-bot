@@ -1,7 +1,7 @@
 function [ddat,TMW] = IngestCrypto(varargin)
 addpath(genpath('/Users/yangsi/Box Sync/UCLA/MATLAB'));
 A.resample={'m','m15','h','h4','d','w'};
-A.csvpath = '/Users/yangsi/Box Sync/Crypto//scripts/python-binance/Data/BinBTCUSDT1h.csv';
+A.csvpath = '/Users/yangsi/Box Sync/Crypto//scripts/python-binance/Data/BinchBTCUSDT1h.csv';
 A = parse_pv_pairs(A,varargin);
 
 ddat.raw=csvread(A.csvpath,1,0);

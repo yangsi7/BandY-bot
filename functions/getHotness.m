@@ -88,8 +88,9 @@ for i = 1 : length(indx)-1
 	TNorm=ones(size(tmpPrice))*0.3;
 	TNorm(1)=0;TNorm(end)=0;TNorm(2)=0.1;TNorm(end-1)=0.1;
 	priceNorm(indx(i):indx(i+1))=(tmpPrice-min(tmpPrice))/(max(tmpPrice)-min(tmpPrice));
-	priceNorm(indx(i):indx(i+1))=priceNorm(indx(i):indx(i+1))-TNorm;
+	priceNorm(indx(i):indx(i+1))=priceNorm(indx(i):indx(i+1));
 end
+%priceNorm(end-A.windowsize:end)=nan;
 tmw = addvars(tmw,priceNorm);
 
 %figure

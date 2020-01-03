@@ -1,0 +1,18 @@
+---BTCUSDT1h is up to date!
+-----
+---Hotness index is .......0.52 and market is *Bearish*.
+-----
+
+---Updating the existing stop-limit sell order...
+
+Stop loss status is NEW
+Updating order...
+Order cancelled. Starting new order...
+Initiated Stop loss limit at: BTC=7069.9/6998.5
+Latest price: BTC=7141.29
+Traceback (most recent call last):
+  File "./runYangiBot.py", line 177, in <module>
+    main()
+  File "./runYangiBot.py", line 69, in main
+    time.sleep(5*60)
+KeyboardInterrupt

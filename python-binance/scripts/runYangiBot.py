@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/anaconda3/bin/python3
 from binance.client import Client
 from datetime import datetime
 import sys
@@ -49,7 +49,7 @@ def main():
     else:
         TradeInfo = load_obj(SetUp['paths']['TradeInfo'])
 
-    NewTicker = False
+    NewTicker = True
     while True:
         if TradeInfo['CloseTimeStamp'] != None and not NewTicker:
             # Wait for next ticker
@@ -63,9 +63,11 @@ def main():
 
             signal,BB = fireSig(SetUp)
             TradeInfo=currTrade.TakeAction(TradeInfo,signal,BB,SetUp)
+            sys.stdout.flush()
             save_obj(TradeInfo,SetUp['paths']['TradeInfo'])
             NewTicker = False
-            plotYangino.plotBot()
+#            plotYangino.plotBot()
+            sys.stdout.flush()
             time.sleep(5*60)
 
 
@@ -164,7 +166,7 @@ def writetTosv(path,row):
     
 def save_obj(obj, path):
     with open(path + '.pkl', 'wb') as f:
-        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(obj, f)
 
 def load_obj(path):
     with open(path + '.pkl', 'rb') as f:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 """Module summary
 Fetch (or update existing) historical Ticker data
@@ -11,7 +11,7 @@ import csv
 import os.path
 import argparse
 import pickle
-import initBot as ini
+import YBotInit as ini
 
 # Paths
 sys.path.append('/Users/yangsi/Box Sync/Crypto/scripts/python-binance/scripts')

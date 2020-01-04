@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 """Module summary
 High level module built on top of python-binance
@@ -18,13 +18,13 @@ import argparse
 import pickle
 from datetime import datetime
 from threading import Timer
-import fetch_historical
-import fetch_recent
 import time
 import matlab.engine
-import initBot as ini
-
-
+import collections
+import YBotInit as ini 
+from YBotFunctions import initTradeFiles,writeTradeJournal,\
+        save_obj, load_obj, binFloat, binStr
+from YBotFunctions import AutoVivification as av
 
 # Strategy done in matlab
 # Now need function to
@@ -135,6 +135,7 @@ def TakeAction(TradeInfo,signal,BB,SetUp):
         TradeInfo=shortOrder(SetUp,TradeInfo)
         TradeInfo=LimitOrder(SetUp,TradeInfo)
     # Write trade journal
+    TradeInfo=checkTradeInfo(TradeInfo,SetUp)
     LastInfo = load_obj(SetUp['paths']["LastInfo"])
     TradeInfo['CloseTimeStamp']=LastInfo['LastTimeStamp']
     TradeInfo['Signal']=signal
@@ -142,50 +143,6 @@ def TakeAction(TradeInfo,signal,BB,SetUp):
     writeTradeJournal(TradeInfo,SetUp)
     return TradeInfo
 
-def writeTradeJournal(TradeInfo,SetUp):
-    # Initialize or load trade Information (pickle)
-    if not os.path.isfile(SetUp['paths']["Journal"]):
-        TradeInfo=initTradeFiles(SetUp)
-    else:
-        # Write data to file
-        listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
-                "shareBuy","chfShort","shareShort","currStopLoss",
-                "currStopLossLimit",'currStopLossId','currLimitStop',
-                'currLimitLimit','currLimitId',"BB","buyProfit","shortProfit",
-                'BNBcomm',"shortId",'limitSell_i','limitBuy_i']
-        towrite=[TradeInfo[i] for i in listKeys]
-        f = open(SetUp['paths']["Journal"], 'a')
-        wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
-        wr.writerow(towrite)
-        f.close()
-    return TradeInfo
-
-def initTradeFiles(SetUp):
-    # Initialize or load trade Information (pickle)
-    if not os.path.isfile(SetUp['paths']["TradeInfo"]+'.pkl'):
-        CurrTradeInfo = {'CloseTimeStamp':None,"Signal":None,"action":[],
-                'Funds':None,'chfBuy':None,'shareBuy':None,'chfShort':None,
-                'shareShort':None,'currStopLoss':None,
-                'currStopLossLimit':None,
-                'currStopLossId':None,'currLimitStop':None,'currLimitLimit':None,
-                'currLimitId':None,'BB':None, 'buyProfit':None,'shortProfit':None,
-                'BNBcomm':0, 'shortId':None,'limitSell_i':None,'limitBuy_i':None}
-        save_obj(CurrTradeInfo,SetUp['paths']["TradeInfo"])
-    else:
-        CurrTradeInfo = load_obj(SetUp['paths']["TradeInfo"])
-    if not os.path.isfile(SetUp['paths']["Journal"]):
-        # Write data to file
-        listKeys=["CloseTimeStamp","Signal","action","Funds","chfBuy",
-        "shareBuy","chfShort","shareShort","currStopLoss",
-        "currStopLossLimit",'currStopLossId','currLimitStop',
-        'currLimitLimit','currLimitId','BB','buyProfit','shortProfit','BNBcomm'
-        'shortId', 'limitSell_i', 'limitBuy_i']
-        writeOption = 'w'
-        f = open(SetUp['paths']["Journal"], writeOption)
-        wr = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
-        wr.writerow(listKeys)
-        f.close()
-    return CurrTradeInfo
  # # # # # # # # # 
 # Market Buy order 
 # ----------------
@@ -193,7 +150,7 @@ def buyOrder(SetUp,TradeInfo):
     apiK = open(SetUp["paths"]["secure"], "r").read().split('\n')
     client = Client(apiK[0], apiK[1])
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-    LastPrice=binFloat(tmp['lastPrice'])
+    LastPrice=float(tmp['lastPrice'])
     TradeInfo['shareBuy'] =binFloat(TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]/LastPrice)
     TradeInfo['chfBuy'] = binFloat(TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"])
     order = client.order_market_buy(
@@ -224,7 +181,7 @@ def shortOrder(SetUp,TradeInfo):
 
     # calculate ammount to short
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-    LastPrice=binFloat(tmp['lastPrice'])        
+    LastPrice=float(tmp['lastPrice'])        
     TradeInfo['shareShort'] = TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]/LastPrice
     TradeInfo['chfShort'] = TradeInfo["Funds"]*SetUp["trade"]["PercentFunds"]
     
@@ -297,7 +254,7 @@ def stopLoss(SetUp,TradeInfo):
 
     # Calculate Stop loss value
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-    LastPrice=binFloat(tmp['lastPrice'])
+    LastPrice=float(tmp['lastPrice'])
     if TradeInfo['limitSell_i'] == 0:
         TradeInfo['currStopLoss'] = binFloat((1-SetUp["trade"]["SLTresh2"])*LastPrice)
         TradeInfo['currStopLossLimit'] = binFloat((1-SetUp["trade"]["SLlimit2"])*LastPrice)
@@ -337,7 +294,7 @@ def LimitOrder(SetUp,TradeInfo):
 
     # Calculate Limit order value
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-    LastPrice=binFloat(tmp['lastPrice'])
+    LastPrice=float(tmp['lastPrice'])
     if TradeInfo['limitBuy_i'] == 0:
         TradeInfo['currLimitStop'] = (1+SetUp["trade"]["LOTresh2"])*LastPrice
         TradeInfo['currLimitLimit'] = (1+SetUp["trade"]["LOlimit2"])*LastPrice
@@ -375,7 +332,7 @@ def updateStopLoss(SetUp,TradeInfo):
 
     # Check last price
     tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-    LastPrice=binFloat(tmp['lastPrice'])
+    LastPrice=float(tmp['lastPrice'])
 
     # Check Order status
     order = client.get_order(
@@ -393,7 +350,7 @@ def updateStopLoss(SetUp,TradeInfo):
         TradeInfo['currStopLoss'] = None
         TradeInfo['currStopLossLimit']=None
         print('---Sold '+str(ExecQty)+SetUp["trade"]["pairTrade"])
-        print('---for '+str(PriceSold*ExecQty)+SetUp["trade"]["pairTrade"])
+        print('---for '+str(PriceSold*ExecQty)+'USDT')
         print('------------')
         print('---Profit: '+str(TradeInfo['buyProfit']))
     elif order['status'] == 'PARTIALLY_FILLED':
@@ -433,7 +390,7 @@ def updateStopLoss(SetUp,TradeInfo):
         if order['status'] == 'NEW' or order['status'] == 'CANCELED':
             # Check if a stop loss update is needed (new>old)
             tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-            LastPrice=binFloat(tmp['lastPrice'])            
+            LastPrice=float(tmp['lastPrice'])            
             tmpCurrStopLoss = binFloat((1-SetUp["trade"]["SLTresh"])*LastPrice)
             tmpCurrStopLossLimit = binFloat((1-SetUp["trade"]["SLlimit"])*LastPrice)
             if binFloat(TradeInfo['currStopLoss']) < tmpCurrStopLoss:
@@ -507,6 +464,18 @@ def updateLimitOrder(SetUp,TradeInfo):
             status = client.get_margin_repay_details(
                     asset=SetUp["trade"]["pairTrade"],
                     txId=transaction['tranId'])
+            ss=0
+            ii=0
+            while ss:
+                ii=ii+1
+                try:
+                    if ii > 10:
+                        break
+                    a=status['rows'][0]['status']
+                    ss=1
+                except:
+                    print('Cannot get status')
+                    ss=0
             repayTry=0
         while status['rows'][0]['status'] == 'PENDING':
             repayTry=repayTry+1
@@ -529,6 +498,8 @@ def updateLimitOrder(SetUp,TradeInfo):
                         type='MARKET',
                         quantity=binFloat(-ToBuy),
                         )
+                acc=getBalance(SetUp)
+                transfer = client.transfer_margin_to_spot(asset=SetUp["trade"]["'pairRef'"], amount=acc['marg']['USDT']['free'])
                 # Update to buy for security
                 ToBuy = -binFloat(order2['executedQty'])*binFloat(order2['price'])
             TradeInfo["Funds"]=TradeInfo["Funds"]-ToBuy
@@ -546,7 +517,7 @@ def updateLimitOrder(SetUp,TradeInfo):
         if order['status'] == 'NEW' or order['status'] == 'CANCELED':
             # Check if a stop limit buy update is needed (new>old)
             tmp=client.get_ticker(symbol=SetUp["trade"]["pair"])
-            LastPrice=binFloat(tmp['lastPrice'])
+            LastPrice=float(tmp['lastPrice'])
             tmpCurrLimitStop = binFloat((1+SetUp["trade"]["LOTresh"])*LastPrice)
             tmpCurrLimitLimit = binFloat((1+SetUp["trade"]["LOlimit"])*LastPrice)
             if binFloat(TradeInfo['currLimitStop']) > tmpCurrLimitStop:            
@@ -570,46 +541,84 @@ def updateLimitOrder(SetUp,TradeInfo):
         print('Error:could not update')
     return TradeInfo        
 
-def unpackOrder(order):
-    price=0
-    qty=0
-    comm=0
-    for i in order['fills']:
-        price = price + i['price']
-        qty = qty + i['qty']
-        comm= comm + i['comm']
-    AdjPrice = Price-comm
-    return AdjPrice,qty,comm
+def getBalance(SetUp):
+    apiK = open(SetUp["paths"]["secure"], "r").read().split('\n')
+    client = Client(apiK[0], apiK[1])    
+    acc = av() 
+    acc['exch']['BTC']['free'] = float(
+            client.get_asset_balance(asset='BTC')['free'])
+    acc['exch']['BTC']['locked'] = float(
+            client.get_asset_balance(asset='BTC')['locked'])
+    acc['exch']['BTC']['total'] = acc[
+            'exch']['BTC']['free'] + acc['exch']['BTC']['locked']  
 
-def save_obj(obj, path):
-    with open(path + '.pkl', 'wb') as f:
-        pickle.dump(obj, f)
+    acc['exch']['USDT']['free'] = float(
+            client.get_asset_balance(asset='USDT')['free'])
+    acc['exch']['USDT']['locked'] = float(
+            client.get_asset_balance(asset='USDT')['locked'])
+    acc['exch']['USDT']['total'] = acc[
+            'exch']['USDT']['free'] + acc['exch']['USDT']['locked']  
 
-def load_obj(path):
-    with open(path + '.pkl', 'rb') as f:
-        return pickle.load(f)
+    acc['exch']['BNB']['free'] = float(
+            client.get_asset_balance(asset='BNB')['free'])
+    acc['exch']['BNB']['locked'] = float(
+            client.get_asset_balance(asset='BNB')['locked'])
+    acc['exch']['BNB']['total'] = acc[
+            'exch']['BNB']['free'] + acc['exch']['BNB']['locked']  
+    
+    acc['exch']['openOrders'] = client.get_open_orders(symbol='BTCUSDT')
+    
+    info = client.get_margin_account()
+    acc['marg']['netAssetBTC']=info['totalNetAssetOfBtc']
+    acc['marg']['totAssetBTC']=info['totalAssetOfBtc']
+    acc['marg']['totBorrowedBTC']=info['totalLiabilityOfBtc']
 
-def binStr(amount):
-    precision = 5    
-    if type(amount)==str:
-        lenNum=len(str(int(round(binFloat(amount)))))
-        amount=binFloat(amount)
-        precision = precision-lenNum
-    else :
-        lenNum=len(str(int(round(amount))))
-        precision = precision-lenNum
+    for i in info['userAssets']:
+        if i['asset']=='BTC':
+            acc['marg']['BTC']['free'] = float(i['free'])
+            acc['marg']['BTC']['borrowed'] = float(i['borrowed'])
+            acc['marg']['BTC']['interest'] = float(i['interest'])
+            acc['marg']['BTC']['locked'] = float(i['free'])
+            acc['marg']['BTC']['net'] = float(i['netAsset'])
+            acc['marg']['BTC']['total'] = acc['marg']['BTC'
+                    ]['free'] + acc['marg']['BTC']['locked']
+        if i['asset']=='USDT':
+            acc['marg']['USDT']['free'] = float(i['free'])
+            acc['marg']['USDT']['borrowed'] = float(i['borrowed'])
+            acc['marg']['USDT']['interest'] = float(i['interest'])
+            acc['marg']['USDT']['locked'] = float(i['free'])
+            acc['marg']['USDT']['net'] = float(i['netAsset'])
+            acc['marg']['USDT']['total'] = acc['marg']['USDT'
+                    ]['free'] + acc['marg']['USDT']['locked']
+        if i['asset']=='BNB':
+            acc['marg']['BNB']['free'] = float(i['free'])
+            acc['marg']['BNB']['borrowed'] = float(i['borrowed'])
+            acc['marg']['BNB']['interest'] = float(i['interest'])
+            acc['marg']['BNB']['locked'] = float(i['free'])
+            acc['marg']['BNB']['net'] = float(i['netAsset'])
+            acc['marg']['BNB']['total'] = acc['marg']['BNB'
+                    ]['free'] + acc['marg']['BNB']['locked']
+    acc['marg']['openOrders'] = client.get_open_margin_orders(symbol='BTCUSDT')
+    return acc  
 
-        amt_str = "{:0.0{}f}".format(amount, precision)
-    return amt_str
+def checkTradeInfo(TradeInfo,SetUp):
+        acc=getBalance(SetUp)
+        if TradeInfo['Funds']!= acc['exch']['USDT']['free']:
+            print('Inconsitent funds --> replace')
+            TradeInfo['Funds']= acc['exch']['USDT']['free']
+        if TradeInfo['shareBuy'] !=None: 
+            if abs(TradeInfo['shareBuy'] - acc['exch']['BTC']['total']) > 1e-06 and acc['exch']['BTC']['total']> 1e-06:
+                print('Inconsitent BTC --> replace')
+                TradeInfo['shareBuy']= acc['exch']['BTC']['total']
+        else:
+            TradeInfo['shareBuy'] = None
 
-def binFloat(amount):
-    precision = 5
-    if type(amount)==str:
-        lenNum=len(str(int(round(binFloat(amount)))))
-        amount=binFloat(amount)
-        precision = precision-lenNum        
-    else:
-        lenNum=len(str(int(round(amount))))
-        precision = precision-lenNum    
-    amt_binFloat = binFloat("{:0.0{}f}".format(amount, precision))
-    return amt_float
+        if acc['exch']['openOrders'] == []:
+            TradeInfo['currStopLossId']=None
+            TradeInfo['limitSell_i']=0
+        if acc['marg']['openOrders'] == []:            
+            TradeInfo['currLimitId']=None
+            TradeInfo['limitBuy_i']=0
+
+
+        return TradeInfo

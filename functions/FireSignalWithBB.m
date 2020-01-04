@@ -1,12 +1,17 @@
 function HotnessIdx = FireSignalWithBB(varargin)
 
-addpath(genpath('/Users/yangsi/Box Sync/Crypto/'));
 %load('/Users/yangsi/Box Sync/Crypto/scripts/models/fre_11Dec2019.mat')
-B.model='/Users/yangsi/Box Sync/Crypto/scripts/models/fre_11Dec2019.mat';
+B.rroot = '/home/euphotic_/yangino-bot/';
+B.model='fre_11Dec2019.mat';
 B.PredTimeIndex = timerange(datetime('01-Jun-2019','Locale','en_US'),datetime('01-Jan-2200','Locale','en_US'),'closed');
 B.Xwin=1;
 B=parse_pv_pairs(B,varargin);
-load(B.model);
+addpath(genpath(B.rroot));
+modelPath=[B.rroot,'models/',B.model];
+
+id='MATLAB:class:mustReturnObject';
+warning('off',id);
+load(modelPath);
 
 [~,TMW]=IngestBinance;
 

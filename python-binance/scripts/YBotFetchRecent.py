@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 """Module summary
 Fetch (or update existing) historical Ticker data

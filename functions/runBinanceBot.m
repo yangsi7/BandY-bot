@@ -4,9 +4,9 @@
 
 % Add data and functions Paths
 % % % % 
-
- addpath(genpath('/Users/yangsi/Box Sync/Crypto/'));
- [~,TMW]=IngestBinance;
+ rroot='/home/euphotic_/yangino-bot/';
+ addpath(genpath(rroot));
+ [~,TMW]=IngestBinance('rroot',rroot);
 
  
 % Technical indicator parameters

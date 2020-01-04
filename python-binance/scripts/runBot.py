@@ -1,4 +1,4 @@
-#!/anaconda3/bin/python3
+#!/usr/bin/python3
 from binance.client import Client
 from datetime import datetime
 import sys

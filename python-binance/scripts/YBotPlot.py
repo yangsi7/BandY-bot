@@ -5,12 +5,12 @@ import pandas as pd
 from datetime import datetime
 import matplotlib
 import matplotlib.ticker as ticker
-import fetch_recent
-import initBot as ini
+import YBotFetchRecent as fetchR
+import YBotInit as ini
 import matlab.engine
 import pylab as plt
 from mpl_finance import candlestick_ohlc
-import plotFunction
+import YBotFunctions as ybf
 import csv
 
 def plotBot():
@@ -18,8 +18,8 @@ def plotBot():
     
     winHours=winDays*24
     SetUp = ini.initSetUp()
-    rows = fetch_recent.main(SetUp,['-window',str(winHours)])
-    Journ=plotFunction.getJournal(SetUp)
+    rows = fetchR.main(SetUp,['-window',str(winHours)])
+    Journ=ybf.getJournal(SetUp)
     
     ccandles=[]
     for i in range(0,len(rows[0])):
@@ -47,7 +47,7 @@ def plotBot():
                      float(kurse_l[i]),
                      float(kurse_c[i])]) for i in range(len(dates))] #_1
     
-    a,b=plotFunction.getSig(SetUp,winHours)
+    a,b=ybf.getSig(SetUp,winHours)
     histsig = np.array(a,dtype=np.float32)
     BB = np.array(b,dtype=int)
     ii=[]
@@ -110,14 +110,14 @@ def plotBot():
     ax1.tick_params(labelrotation=45)
     ax2.tick_params(labelrotation=45)
     
-    ax4.plot(Toplot["time"],Toplot["Funds"])
+    ax4.plot(Journ["time"],Journ["Funds"])
     ax4.set_xticklabels([])
     ax4.tick_params(labelrotation=45)    
 
-    ax5.plot(Toplot["time"],TotFunds)
+    ax5.plot(Journ["time"],TotFunds)
     ax5.set_xticklabels(a)
     ax5.tick_params(labelrotation=45)
-    plt.savefig('/Users/yangsi/Box Sync/Crypto/scripts/figures/BotJournal.pdf')
+    plt.savefig(SetUp['paths']['rroot']+'figures/BotJournal.pdf')
     plt.clf()
 
 

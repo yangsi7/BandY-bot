@@ -1,9 +1,9 @@
-function [varnames,tmw] = CalcIndicators(tmw,varargin)
+function [varnames,tmw,varnamesBad] = CalcIndicators(tmw,varargin)
 
 % select all if no time index is provided
 A.TimeIndex = timerange(datetime('01-Jan-2000','Locale','en_US'),datetime('31-Dec-2030','Locale','en_US'),'closed'); 
  
- A.ParamStruct = [];
+A.ParamStruct = [];
  
 % Default parameters
 % ma
@@ -29,12 +29,15 @@ A.chaikvolat.windowsize = 10;
 A.jma.L=7;
 A.jma.phi=50;
 A.jma.pow=2;
+A.adx=7;
 
+A.Norm=0;
 
 A=parse_pv_pairs(A,varargin);
 if ~isempty(A.ParamStruct); A=A.ParamStruct;end;
 
 ttmw=tmw;
+
 % HLC average
 returnFunc = @(open,high,low,close,volume) (high +low + close)/3;;
 tmw = [tmw,rowfun(returnFunc,ttmw,'OutputVariableNames',{'hlc'})]; 
@@ -83,15 +86,7 @@ for i = 1 : endi
     ma.(['w',num2str(A.ma.windowsize(i))]).Properties.VariableNames{'Close'} = ['maw',num2str(A.ma.windowsize(i))];
     tmw=[tmw,ma.(['w',num2str(A.ma.windowsize(i))])];
 end
-
-% tsmom -- momentum indicator
-%tmw.Volume = []; % remove VOLUME field
-MomTsom.(['np',num2str(A.tsom.numperiod)]) = tsmom(ttmw(:,'Close'),'NumPeriods',A.tsom.numperiod); 
-MomTsom.(['np',num2str(A.tsom.numperiod)]).Properties.VariableNames{'Close'} = ['MomTsomnp',num2str(A.tsom.numperiod)];
-tmw=[tmw,MomTsom.(['np',num2str(A.tsom.numperiod)])];
-
-
-% MACD
+   % MACD
 [macdLine, macdSline] = macd(ttmw);
 macdLine.Properties.VariableNames{'Open'} ='macdLineOpen';
 macdLine.Properties.VariableNames{'High'} ='macdLineHigh';
@@ -106,6 +101,25 @@ macdSline.Properties.VariableNames{'Close'} ='macdSlineClose';
 macdSline.Properties.VariableNames{'Volume'} ='macdSlineVolume';
 
 tmw=[tmw,macdLine,macdSline];
+
+% tsmom -- momentum indicator
+%tmw.Volume = []; % remove VOLUME field
+MomTsom.(['np',num2str(A.tsom.numperiod)]) = tsmom(ttmw(:,'Close'),'NumPeriods',A.tsom.numperiod); 
+MomTsom.(['np',num2str(A.tsom.numperiod)]).Properties.VariableNames{'Close'} = ['MomTsomnp',num2str(A.tsom.numperiod)];
+tmw=[tmw,MomTsom.(['np',num2str(A.tsom.numperiod)])];
+
+%ADX
+endi=length(A.adx.windowsize);
+for i = 1 : endi
+	a=indicators([tmw.High,tmw.Low,tmw.Close],'adx');
+	pdi=a(:,1);
+	mdi=a(:,2);
+	adx=a(:,3);
+	tmw=addvars(tmw,pdi,'NewVariableNames',['pdiW',num2str(A.adx.windowsize(i))]);
+	tmw=addvars(tmw,mdi,'NewVariableNames',['mdiW',num2str(A.adx.windowsize(i))]);
+	tmw=addvars(tmw,adx,'NewVariableNames',['adxW',num2str(A.adx.windowsize(i))]);
+end
+
 
 %RSI
 endi=length(A.rsi.windowsize);
@@ -133,13 +147,13 @@ end
 
 
 %price-volume-trend
-endi=length(A.pvt.windowsize);
-for i = 1 : endi
-	pvTrend = pvtrend(ttmw);
-	tmp = movavg(pvTrend(:,'PriceVolumeTrend'),'simple',A.pvt.windowsize(i));
-	tmp.Properties.VariableNames{'PriceVolumeTrend'}=['anomPVTw',num2str(A.pvt.windowsize(i))];
-	tmw=[tmw,tmp];
-end
+%endi=length(A.pvt.windowsize);
+%for i = 1 : endi
+%	pvTrend = pvtrend(ttmw);
+%	tmp = movavg(pvTrend(:,'PriceVolumeTrend'),'simple',A.pvt.windowsize(i));
+%	tmp.Properties.VariableNames{'PriceVolumeTrend'}=['anomPVTw',num2str(A.pvt.windowsize(i))];
+%	tmw=[tmw,tmp];
+%end
 
 
 % chaiken volatility
@@ -150,13 +164,19 @@ for i = 1 : endi
     tmw=[tmw,chaikVolat];
 end
 
-%% JMA
-%endi=length(A.jma.L);
-%for i = 1 : endi
-%   jma = JMA(tmw,'L',A.jma.L(i),'phi',A.jma.phi,'pow',A.jma.pow);
-%   tmw=addvars(tmw,jma,'NewVariableNames',{['jma_L',num2str(A.jma.L(i)),'Phi',num2str(A.jma.phi),'pow',num2str(A.jma.pow)]});
-%end
+% JMA
+endi=length(A.jma.L);
+for i = 1 : endi
+   jma = JMA(tmw,'L',A.jma.L(i),'phi',A.jma.phi,'pow',A.jma.pow);
+   tmw=addvars(tmw,jma,'NewVariableNames',{['jma_L',num2str(A.jma.L(i)),'Phi',num2str(A.jma.phi),'pow',num2str(A.jma.pow)]});
+end
 
-tmw=tmw(A.TimeIndex,:);
+%tmw=tmw(A.TimeIndex,:);
 varnames=(tmw.Properties.VariableNames);
 
+varnamesBad={};
+for i = 1 : length(varnames)
+   if sum(tmw.(varnames{i})==inf|tmw.(varnames{i})==nan) >0
+      varnamesBad=[varnamesBad;varnames{i}];
+   end
+end

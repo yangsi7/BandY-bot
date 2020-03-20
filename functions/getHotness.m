@@ -91,7 +91,8 @@ for i = 1 : length(indx)-1
 	priceNorm(indx(i):indx(i+1))=priceNorm(indx(i):indx(i+1));
 end
 %priceNorm(end-A.windowsize:end)=nan;
-tmw = addvars(tmw,priceNorm);
+Hotness=priceNorm;
+tmw = addvars(tmw,Hotness);
 
 %figure
 %plot(tmw.Time,tmw.priceNorm,'k','LineWidth',1);hold on; grid on;

@@ -2,22 +2,26 @@ function [ddat,TMW] = IngestCrypto(varargin)
 addpath(genpath('/Users/yangsi/Box Sync/UCLA/MATLAB'));
 A.resample={'m','m15','h','h4','d','w'};
 A.rroot='/home/euphotic_/yangino-bot/';
+A.ValidTimeIndex = timerange(datetime('01-Sep-2000','Locale','en_US'),datetime('01-Jan-2200','Locale','en_US'),'closed');
 A = parse_pv_pairs(A,varargin);
-A.csvpath = [A.rroot,'/python-binance/Data/BinchBTCUSDT1h.csv'];
+A.csvpath = [A.rroot,'/pythonBinance/Data/BinchBTCUSDT1h.csv'];
 
-ddat.raw=csvread(A.csvpath,1,0);
-ddat.open = ddat.raw(:,2);
-ddat.high = ddat.raw(:,3);
-ddat.low = ddat.raw(:,4);
-ddat.close = ddat.raw(:,5);
-ddat.volume = ddat.raw(:,6);
+warning('off','MATLAB:table:ModifiedAndSavedVarnames');
+
+format long;
+
+ddat.raw=readtable(A.csvpath);
+ddat.open = table2array(ddat.raw(:,2));
+ddat.high = table2array(ddat.raw(:,3));
+ddat.low = table2array(ddat.raw(:,4));
+ddat.close = table2array(ddat.raw(:,5));
+ddat.volume = table2array(ddat.raw(:,6));
 
 % Millisecond timestamp since 1970-01-01
-ddat.militime = ddat.raw(:,7);
+ddat.militime = table2array(ddat.raw(:,7));
 % Convert to datenum (second timestamp since 0000-00-00)
-ddat.datenum = ddat.militime/86400 + datenum(1970,1,1);
 %Convert to datetime
-ddat.datetime = datetime(ddat.datenum,'ConvertFrom','datenum');
+ddat.datetime = datetime(ddat.militime,'ConvertFrom','posixtime','TimeZone','');
 
 % Create a timetable from minute vector input
 TMW.h = timetable(ddat.open,ddat.high,ddat.low,ddat.close,ddat.volume, ...
@@ -27,4 +31,5 @@ idx=find(TMW.h.Close ==0 | TMW.h.Open ==0);
 if ~isempty(idx); TMW.h{idx,:}=nan; end;
 
 TMW.h = fillmissing(TMW.h,'linear');
+TMW.h = TMW.h(A.ValidTimeIndex,:);
 

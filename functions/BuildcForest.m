@@ -5,10 +5,10 @@ A.varnames={'Open','High','Low','Close','Volume'};
 A=parse_pv_pairs(A,varargin);
 
 tmw = tmw(A.TimeIndex,:);
-idxNnan=~isnan(tmw.priceNorm(:));
+idxNnan=~isnan(tmw.Hotness(:));
 tmw=tmw(idxNnan,:);
 bbounds=[0 0.15 0.3 0.6 0.75 1];
-dpriceNorm = discretize(tmw.priceNorm,bbounds,'categorical');
+dpriceNorm = discretize(tmw.Hotness,bbounds,'categorical');
 
 X=table2array(tmw(:,A.varnames));
 

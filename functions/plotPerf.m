@@ -32,7 +32,7 @@ if strcmp(A.method,'fitrensemble')
 	%candle(tmw);hold on;grid on;
 	plot(tmw.Time,tmw.hlc,'k','LineWidth',2); hold off;
 	subplot(2,1,2)
-	plot(tmw.Time,tmw.priceNorm,'k','LineWidth',2);hold on;grid on;
+	plot(tmw.Time,tmw.Hotness,'k','LineWidth',2);hold on;grid on;
 	plot(tmw.Time,tmw.yhat_fre,'r','LineWidth',2); hold off;
 end
 

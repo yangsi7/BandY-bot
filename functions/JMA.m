@@ -22,12 +22,9 @@ function jma = JMA(tmw,varargin)
  for i = 2 : length(tmw.Close)
    e0(i) = (1-Alpha)*price(i) + Alpha*e0(i-1);
    e1(i) = (price(i)-e0(i))*(1-Beta)+Beta*(e1(i-1));
-   %e2(i) = (e0(i)+phi_r*e1(i)-jma(i-1))*(1-Alpha)^2+Alpha^2+e2(i-1);
    e2(i) = e0(i) + phi_r*e1(i);
    e3(i) = (e2(i) - jma(i-1))*(1-Alpha)^2+Alpha^2*e3(i-1);
    jma(i) = e3(i)+jma(i-1);
  end
 
 
-plot(price);hold on;grid on;
-plot(jma); hold off;

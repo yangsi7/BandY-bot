@@ -28,6 +28,6 @@ load(A.model)
 
 % First Get hotness
 tmwNN = getHotness(TMW.h);
-hotness=tmwNN.priceNorm;
+hotness=tmwNN.Hotness;
 sig = hotness;
 

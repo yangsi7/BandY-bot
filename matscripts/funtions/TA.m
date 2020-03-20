@@ -33,7 +33,7 @@ classdef TA
          tmw = TA.atr(tmw, 'per', A.atr.per);
          tmw = TA.adx(tmw, 'per', A.adx.per);
          tmw = TA.macd(tmw, 'fast', A.macd.fast, 'long', A.macd.long, 'signal', A.macd.signal);
-         tmw = TA.sar(tmw, 'inc', A.sar.inc, 'max', A.sar.mmax);
+         tmw = TA.sar(tmw, 'inc', A.sar.inc, 'mmax', A.sar.mmax);
          tmw = TA.svol(tmw,'per', A.svol.per, 'f', A.svol.f);
 
 
@@ -60,8 +60,8 @@ classdef TA
          wper = round(A.per/3.0)-1.0;
          rng(2:end) = tmw.Close(2:end)-tmw.Close(1:end-1);
          absrng = abs(rng);
-         avgrng = indicators(absrng,'sma',A.per);
-         smthrng = indicators(avgrng,'sma',wper).*A.mult;
+         avgrng = TA.indicators(absrng,'sma',A.per);
+         smthrng = TA.indicators(avgrng,'sma',wper).*A.mult;
          smthrng(isnan(smthrng)) = 0;
          % Range filter
          rngflt = tmw.Close;
@@ -120,11 +120,11 @@ classdef TA
 
          %Phase ratio
          if A.phi<-100
-            phi_r=0.5
+            phi_r=0.5;
          elseif A.phi>100
-            phi_r=2.5
+            phi_r=2.5;
          else
-            phi_r=A.phi/100+1.5
+            phi_r=A.phi/100+1.5;
          end
          
          %Beta
@@ -146,7 +146,6 @@ classdef TA
             e3(i) = (e2(i) - jma(i-1))*(1-Alpha)^2+Alpha^2*e3(i-1);
             jma(i) = e3(i)+jma(i-1);
           end
-         jma = JMA(tmw,'L',A.jma.L(i),'phi',A.jma.phi,'pow',A.jma.pow);
          djma = nan(size(jma));
          djma(2:end) = jma(2:end)-jma(1:end-1);
          tmw=addvars(tmw,jma,'NewVariableNames','jma');
@@ -178,7 +177,7 @@ classdef TA
          A.inc=0.5; A.mmax=0.12;
          A=parse_pv_pairs(A,varargin);
 
-         sar = TA.indicators([tmw.High,tmw.Low],'sar',A.inc(i),A.mmax);
+         sar = TA.indicators([tmw.High,tmw.Low],'sar',A.inc,A.mmax);
          tmw=addvars(tmw,sar,'NewVariableNames','sar');
       end %sar
 
@@ -201,8 +200,8 @@ classdef TA
          up_m1(2:end) = up(1:end-1);
          dn_m1 = nan(size(tmw.Close));
          dn_m1(2:end) = dn(1:end-1);
-         upt = (up + up_m1.*(A.per - 1))./A.rsi.per;
-         dnt = (dn + dn_m1.*(A.per - 1))./A.rsi.per;
+         upt = (up + up_m1.*(A.per - 1))./A.per;
+         dnt = (dn + dn_m1.*(A.per - 1))./A.per;
          rsi_v = 100.*(upt./(upt+dnt));
          
          tmw=addvars(tmw,rsi_v,'NewVariableNames','rsi_v');

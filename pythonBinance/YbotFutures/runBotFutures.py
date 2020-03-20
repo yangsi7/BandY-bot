@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-rroot="/home/euphotic_/yangino-bot/pythonBinance/"
+rroot="/home/euphotic_/yangino-bot/pythonBinance/YbotFutures"
 import sys
 sys.path.append(rroot)
-from YbotFutures import *
+from trade import *
 
 """Module summary
 This script runs the incredible Yangino Bot, hoping to 

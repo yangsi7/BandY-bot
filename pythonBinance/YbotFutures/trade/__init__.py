@@ -11,7 +11,6 @@ from threading import Timer
 import time
 import matlab.engine
 
-from .binanceFutures.client_futures import Client
 from . import trade
 from . import fetchHistorical as fetchH
 from . import params as ini

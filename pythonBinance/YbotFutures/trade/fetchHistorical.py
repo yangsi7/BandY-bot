@@ -3,7 +3,8 @@
 """Module summary
 Fetch (or update existing) historical Ticker data
 """
-
+import sys
+sys.path.append("..")
 from datetime import datetime
 import sys
 import csv
@@ -12,8 +13,7 @@ import argparse
 import pickle
 import pandas as pd
 from . import params as ini
-from .binanceFutures.client_futures import Client as ClientFutures
-from .binanceFutures.client import Client as ClientExchange
+from APIpyBinance.binance.client import Client
 
 
 def main(args):

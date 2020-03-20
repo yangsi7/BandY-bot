@@ -22,7 +22,7 @@ addpath(genpath(A.rroot));
 % Get long and short signals
 [long, short] = strategy(tmw, 'strat', 'Andy');
 
-presig = zeros(size(lon));
+presig = zeros(size(long));
 presig(long)=1;
 presig(short)=-1;
 sig = presig(end-1:end);

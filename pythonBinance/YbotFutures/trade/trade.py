@@ -7,7 +7,8 @@ Exectute trades based on provided signals
     and current trade information.
 
 """
-
+import sys
+sys.path.append("..")
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -22,7 +23,7 @@ import time
 import matlab.engine
 import collections
 
-from .binanceFutures.client_futures import Client
+from APIpyBinance.binance.client import Client
 from . import params as ini 
 from .YbotUtils import initTradeFiles,\
         save_obj, load_obj, binFloat, \
@@ -97,7 +98,7 @@ def TakeAction(TradeInfo,signal,BB,SetUp):
     #-------------
     #--Close Long
     #-------------
-    elif not TradeInfo['BTC Bought'].isnull()[0] and signal == -1
+    elif not TradeInfo['BTC Bought'].isnull()[0] and signal == -1:
         print('---Bearish!')
         print('------')
         print('---Closing all long position...')
@@ -105,12 +106,12 @@ def TakeAction(TradeInfo,signal,BB,SetUp):
     #-------------
     #--Close Short
     #-------------
-    elif not TradeInfo['BTC Shorted'].isnull()[0] and signal == 1
+    elif not TradeInfo['BTC Shorted'].isnull()[0] and signal == 1:
         print('---Bullish!')
         print('------')
         print('---Closing all short position...')
         updateStopLoss(SetUp,TradeInfo,'BUY',SetUp["trade"]["Stop"][0])
-    else
+    else:
         print('---No action taken')
        
     # Displaying last price 
@@ -137,14 +138,14 @@ def putOrder(SetUp,TradeInfo,side,tpBol=False):
     apiK = open(SetUp['paths']['secure'], 'r').read().split('\n')
     client = Client(apiK[0], apiK[1])
     LastPrice=float(client.get_symbol_ticker(symbol=SetUp['trade']['pair'])['price'])
-    if side == 'BUY'
+    if side == 'BUY':
         TradeInfo['BTC Bought'] =binFloat(TradeInfo['Free Funds'
             ][0]*SetUp['trade']['PercentFunds']/LastPrice*SetUp['trade']['Leverage'])
-    elif side == 'SELL'
+    elif side == 'SELL':
         TradeInfo['BTC Shorted'] = binFloat(TradeInfo['Free Funds'
             ][0]*SetUp['trade']['PercentFunds']/LastPrice*SetUp['trade']['Leverage'])
     # Create a Long order
-    if tpBol
+    if tpBol:
         qtytp1 = binFloat(TradeInfo['BTC Bought'][0]*TradeInfo.ftp
             ) if side == 'BUY' else binFloat(TradeInfo['BTC Shorted'][0]*TradeInfo.ftp)
         qtytp2 = binFloat(TradeInfo['BTC Bought'][0]*(1-TradeInfo.ftp
@@ -152,7 +153,7 @@ def putOrder(SetUp,TradeInfo,side,tpBol=False):
         tp1stop = binFloat(LastPrice*(TradeInfo.tp1+1.0)
             ) if side == 'BUY' else binFloat(LastPrice*(TradeInfo.tp1-1.0)) 
         tp2stop = binFloat(LastPrice*(TradeInfo.tp2+1.0)
-            ) if side == 'SELL' elsebinFloat(LastPrice*(TradeInfo.tp2-1.0))
+            ) if side == 'SELL' else binFloat(LastPrice*(TradeInfo.tp2-1.0))
 
         ordertp1 = client.create_order(
         symbol=SetUp['trade']['pair'],
@@ -168,9 +169,9 @@ def putOrder(SetUp,TradeInfo,side,tpBol=False):
         quantity=qtytp2,
         )    
         TradeInfo = checkMarketOrder(TradeInfo,ordertp2,2)
-    else
+    else:
         qqty = binFloat(TradeInfo['BTC Bought'][0]
-                ) if side == 'BUY' else binFloat(TradeInfo['BTC Shorted'][0]
+                ) if side == 'BUY' else binFloat(TradeInfo['BTC Shorted'][0])
         order = client.create_order(
         symbol=SetUp['trade']['pair'],
         side=side,
@@ -197,22 +198,23 @@ def stopLoss(SetUp,TradeInfo,side, stop):
         TradeInfo (dict): Current state of trades is updated
     """
     # Check arguments and raise exceptions if needed
-    try
+    try:
         stop = float(stop)
-    except ValueError as e
+    except ValueError as e:
         print(e)
         return
-    if side != 'SELL' or side != 'BUY'
+    if side != 'SELL' or side != 'BUY':
         raise Exception('Error: set side to a valid value (SELL or BUY)')
-        return
+        return TradeInfo
 
-    if not TradeInfo['LongStopLossID'].isnull()[0] side == 'SELL':
-        print('Current stop loss (Id='+str(TradeInfo['LongStopLossID'][0]+') exists')
+    if not TradeInfo['LongStopLossID'].isnull()[0] and side == 'SELL':
+        print('Current stop loss (Id='+str(TradeInfo['LongStopLossID'][0])+') exists')
         print('No action taken')
-    elif not TradeInfo['ShortStopLossID'].isnull()[0] side == 'BUY'
+        return TradeInfo
+    elif not TradeInfo['ShortStopLossID'].isnull()[0] and side == 'BUY':
         print('Current stop loss (Id='+str(TradeInfo['ShortStopLossID'][0])+') exists')
         print('No action taken')
-    return TradeInfo
+        return TradeInfo
 
     # Open Binance client
     apiK = open(SetUp['paths']['secure'], 'r').read().split('\n')
@@ -220,11 +222,11 @@ def stopLoss(SetUp,TradeInfo,side, stop):
 
     # Calculate Stop loss value
     LastPrice=float(client.get_symbol_ticker(symbol=SetUp['trade']['pair'])['price'])
-    if side == 'SELL'
+    if side == 'SELL':
         stopPrice = binFloat((1+float(stop))*LastPrice)
         TradeInfo['LongStopPrice'] = stopPrice
         qqty = binFloat(TradeInfo['BTC Bought'][0])
-    elif side == 'BUY'
+    elif side == 'BUY':
         stopPrice = binFloat((1-float(stop))*LastPrice)
         TradeInfo['ShortStopPrice'] = stopPrice
         qqty = binFloat(TradeInfo['BTC Shorted'][0])
@@ -240,9 +242,9 @@ def stopLoss(SetUp,TradeInfo,side, stop):
     stopPrice=binFloat(stopPrice),
     )
 
-    if side == 'SELL'
+    if side == 'SELL':
         TradeInfo['LongStopLossID'] =int(order['orderId'])
-    elif side = 'BUY'
+    elif side == 'BUY':
         TradeInfo['ShortStopLossID'] =int(order['orderId'])
     print('Initiated Stop loss at: '+ SetUp['trade']['pairTrade'] + '=' + str(
         stopPrice))
@@ -253,8 +255,8 @@ def stopLoss(SetUp,TradeInfo,side, stop):
 def takeProfit(SetUp,TradeInfo,side,stop,limit):
     # use implicit Falsness of empty lists
     if not TradeInfo['TP1Id'].isnull()[0] and not TradeInfo['TP2Id'].isnull()[0]:
-        print('TP1 order (Id='+str(TradeInfo['TP1Id'][0])+') and 
-                TP2 order (Id='+str(TradeInfo['TP2Id'][0])+') exists')
+        print('TP1 order (Id='+str(TradeInfo['TP1Id'][0])+
+            ') and TP2 order (Id=' + str(TradeInfo['TP2Id'][0])+') exists')
         print('No action taken')
         return TradeInfo
     limit = stop - limit if side == 'BUY' else stop + limit
@@ -264,14 +266,14 @@ def takeProfit(SetUp,TradeInfo,side,stop,limit):
 
     # Calculate Stop loss value
     LastPrice=float(client.get_symbol_ticker(symbol=SetUp['trade']['pair'])['price'])
-    if side == 'SELL'
+    if side == 'SELL':
         qtytp1 = binFloat(TradeInfo['BTC Bought'][0]*TradeInfo.ftp)
         qtytp2 = binFloat(TradeInfo['BTC Bought'][0]*(1-TradeInfo.ftp))
         tp1stop = binFloat(LastPrice*(1+stop))
         tp2stop = binFloat(LastPrice*(1+stop))
         tp1limit = binFloat(LastPrice*(1+limit))
         tp2limit = binFloat(LastPrice*(1+limit))
-    else
+    else:
         qtytp1 = binFloat(TradeInfo['BTC Shorted'][0]*TradeInfo.ftp)
         qtytp2 = binFloat(TradeInfo['BTC Shorted'][0]*(1-TradeInfo.ftp))
         tp1stop = binFloat(LastPrice*(1-stop))
@@ -286,7 +288,7 @@ def takeProfit(SetUp,TradeInfo,side,stop,limit):
     timeInForce='GTC',
     reduceOnly = 'true',
     quantity = qtytp1,
-    stop = tp1stop
+    stop = tp1stop,
     price = tp1limit
     )    
     ordertp2 = client.create_order(
@@ -296,7 +298,7 @@ def takeProfit(SetUp,TradeInfo,side,stop,limit):
     timeInForce='GTC',
     reduceOnly = 'true',
     quantity = qtytp2,
-    stop = tp2stop
+    stop = tp2stop,
     price = tp2limit
     )    
     TradeInfo['TP1ID'] =int(ordertp1['orderId'])
@@ -310,7 +312,7 @@ def takeProfit(SetUp,TradeInfo,side,stop,limit):
 
 def updateStopLoss(SetUp,TradeInfo,side,stop):
     if TradeInfo['LongStopLossID'][0
-            ] == np.nan or : TradeInfo['ShortStopLossID'][0] == np.nan
+            ] == np.nan or  TradeInfo['ShortStopLossID'][0] == np.nan:
         print('No stop loss found...')
         print('--> No action taken')
         return TradeInfo
@@ -333,7 +335,7 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
         a=a[0]
         if a['commissionAsset']=='BNB':
             TradeInfo['Commission (BNB)'] =float(a['commission'])
-        if side == 'BUY'
+        if side == 'BUY':
             TradeInfo['Closed Buy Sell-Price'] =float(a['price'])
             ExecQty=float(a['qty'])
             TradeInfo['Closed Buy Profit'] = a['realizedPnl']
@@ -344,7 +346,7 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
             TradeInfo['LongStopLossID'] = np.nan
             TradeInfo['Sell Stop Price'] = np.nan
             TradeInfo['Close-BTC-Buy']=True
-        elif side == 'SELL'
+        elif side == 'SELL':
             TradeInfo['Closed Short Sell-Price'] =float(a['price'])
             ExecQty=float(a['qty'])
             TradeInfo['Closed Short Profit'] = a['realizedPnl']
@@ -356,7 +358,7 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
             TradeInfo['Sell Stop Price'] = np.nan
             TradeInfo['Close-BTC-Short']=True
 
-        print('---'+side+': 'str(ExecQty)+SetUp['trade']['pairTrade'])
+        print('---' + side + ': ' + str(ExecQty) + SetUp['trade']['pairTrade'])
         print('---for '+str(float(a['price'])*ExecQty)+'USDT')
         print('------------')
         print('---Profit: '+str(a['realizedPnl']))
@@ -370,9 +372,9 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
             # Calculate Limit order value
             LastPrice=float(client.get_symbol_ticker(symbol=SetUp['trade']['pair'])['price'])
             tmpstop = binFloat((1+float(stop))*LastPrice
-                    ) if side == 'BUY' else binFloat((1-float(stop))*LastPrice
-            currstop = TradeInfo['Sell Stop Price'][0
-                ] if side == 'BUY' else TradeInfo['Buy Stop Price'][0]
+                    ) if side == 'BUY' else binFloat((1-float(stop))*LastPrice)
+            currstop = binFloat(TradeInfo['Sell Stop Price'][0]
+                ) if side == 'BUY' else binFloat(TradeInfo['Buy Stop Price'][0])
             if (currstop < tmpstop and side == 'SELL'
                 ) or (currstop > tmpstop and side == 'BUY'):
                 print('Updating stop loss...')
@@ -398,7 +400,7 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
         print('Error:could not update')
     return TradeInfo
 
-def checkMarketOrder(TradeInfo,order,tp=False)
+def checkMarketOrder(TradeInfo,order,tp=False):
     apiK = open(SetUp['paths']['secure'], 'r').read().split('\n')
     client = Client(apiK[0], apiK[1])
     LastPrice=float(client.get_symbol_ticker(symbol=SetUp['trade']['pair'])['price'])
@@ -414,29 +416,29 @@ def checkMarketOrder(TradeInfo,order,tp=False)
             print('Buy has not yet been filled')
             if i == 50:
                 print('Failed to retreive status')
-    if a['side'] == 'BUY'
-        if tp == 1
+    if a['side'] == 'BUY':
+        if tp == 1:
             TradeInfo['LongOrderID1'] = int(order['orderId'])
-        elif tp == 2
+        elif tp == 2:
             TradeInfo['LongOrderID2'] = int(order['orderId'])
-        else    
+        else:    
             TradeInfo['LongOrderID'] = int(order['orderId'])
             
-        if tp == 2
+        if tp == 2:
             TradeInfo['BTC Bought'] = TradeInfo['BTC Bought'][0]+binFloat(a['executedQty'])
-        else
+        else:
             TradeInfo['BTC Bought'] = binFloat(a['executedQty'])
         TradeInfo['BTCUSDT Buy Price'] = binFloat(LastPrice)
-    else
-        if tp == 1
+    else:
+        if tp == 1:
             TradeInfo['ShortOrderID1'] = int(order['orderId'])
-        elif tp == 2
+        elif tp == 2:
             TradeInfo['ShortOrderID2'] = int(order['orderId'])
-        else
+        else:
             TradeInfo['ShortOrderID'] = int(order['orderId'])
-        if tp == 2
-            TradeInfo['BTC Shorted'] = TradeInfo['BTC Shorted'][0 + ]binFloat(a['executedQty'])
-        else
+        if tp == 2:
+            TradeInfo['BTC Shorted'] = TradeInfo['BTC Shorted'][0] + binFloat(a['executedQty'])
+        else:
             TradeInfo['BTC Shorted'] = binFloat(a['executedQty'])
         TradeInfo['BTCUSDT Short Price'] = binFloat(LastPrice)
     return TradeInfo 

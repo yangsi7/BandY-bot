@@ -48,7 +48,7 @@ classdef TA
          tmw = tmw(A.TimeIndex,:);
       end % CalcIndicators
       
-      function rngFilt(tmw, varargin)
+      function tmw = rngFilt(tmw, varargin)
       % ------------
       % Range filter
       % ------------
@@ -100,7 +100,7 @@ classdef TA
          tmw=addvars(tmw,dwrd,'NewVariableNames','rf_dwrd');
       end
 
-      function atr(tmw, varargin)
+      function tmw = atr(tmw, varargin)
       % ------------
       % Average true range
       % ------------
@@ -111,7 +111,7 @@ classdef TA
          tmw=addvars(tmw,atr,'NewVariableNames','atr');
       end % atr 
 
-      function jma(tmw, varargin)
+      function tmw = jma(tmw, varargin)
       % ------------
       % Jurik moving average
       % ------------
@@ -153,7 +153,7 @@ classdef TA
          tmw=addvars(tmw,djma,'NewVariableNames','djma');
       end
 
-      function adx(tmw, varargin)
+      function tmw = adx(tmw, varargin)
       % ------------
       % Average directional movement index (ADX/DMI)
       % ------------
@@ -171,7 +171,7 @@ classdef TA
      end % adx
 
 
-      function sar(tmw, varargin)
+      function tmw = sar(tmw, varargin)
       % ------------
       % Average directional movement index (ADX/DMI)
       % ------------
@@ -183,7 +183,7 @@ classdef TA
       end %sar
 
 
-      function rsiv(tmw, varargin)
+      function tmw = rsiv(tmw, varargin)
       % ------------
       % Average directional movement index (ADX/DMI)
       % ------------
@@ -209,7 +209,7 @@ classdef TA
       end
 
 
-      function macd(tmw, varargin)
+      function tmw = macd(tmw, varargin)
       % ------------
       % Average directional movement index (ADX/DMI)
       % ------------
@@ -222,7 +222,7 @@ classdef TA
       end % macd
 
 
-      function svol(tmw, varargin)
+      function tmw = svol(tmw, varargin)
       % ------------
       % Volume based index svol 
       % ------------
@@ -378,24 +378,6 @@ classdef TA
       %     fpctd = vout(:,2);
       %     plot(1:length(fpctk),fpctk,'b',1:length(fpctd),fpctd,'g')
       %     title('Fast Stochastics for Disney')
-      % 
-      % Further Information
-      %     For an in depth analysis of how many of these technical indicators
-      %     work, refer to one of the following websites or Google it.
-      %     http://stockcharts.com/
-      %     http://www.investopedia.com/
-      %     http://www.ta-lib.org/
-      %
-      
-      % Version : 1.1.3 (05/24/2013)
-      % Author  : Nate Jensen
-      % Created : 10/10/2011
-      % History :
-      %  - v1.0 10/25/2011 : initial release of 21 indicators
-      %  - v1.1 03/04/2012 : 23 indicators, fixed date conversion issue
-      %  - v1.1.1 03/25/2012 : 24 indicators
-      %  - v1.1.2 03/21/2013 : 25 indicators
-      %  - v1.1.3 05/24/2013 : 27 indicators, bug fixes
       
       % To Do
       %  - add more indicators

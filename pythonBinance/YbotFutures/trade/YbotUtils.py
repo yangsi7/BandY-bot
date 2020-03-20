@@ -14,7 +14,7 @@ import time
 import matlab.engine
 import smtplib
 
-from ..python-binance/client import Client
+from .binanceFutures.client_futures import Client
 from . import fetchHistorical as fetchH
 
 def initTradeFiles(SetUp):
@@ -23,13 +23,11 @@ def initTradeFiles(SetUp):
         toDf = {'Open timestmp':[np.nan],'Open dtime':[np.nan], 'Close timestmp':[np.nan],
             'Close dtime':[np.nan], 'timestmp':[int(time.time())], 'Signal':[np.nan], 'BB':[np.nan], 
             'Free Funds':[acc['USDT']['mBalance']],'Total Assets':[acc['wBalance']],
-            'BTC Bought':[np.nan],'BTCUSDT Buy Price':[np.nan], 'LongOrderID':[np.nan],
-            'LongOrderID'1:[np.nan],'LongOrderID2':[np.nan],
-            'BTC Shorted':[np.nan], 'BTCUSDT Short Price':[np.nan], 'ShortOrderID':[np.nan],
-            'ShortOrderID1':[np.nan], 'ShortOrderID2':[np.nan],
+            'BTC Bought':[np.nan],'BTCUSDT Buy Price':[np.nan], 
+            'BTC Shorted':[np.nan], 'BTCUSDT Short Price':[np.nan], 
             'BTC Borrowed Id':[np.nan], 'Sell Stop Price':[np.nan],'Sell Limit Price':[np.nan], 
-            'ShortStopLossId':[np.nan], 'Buy Stop Price':[np.nan],'Buy Limit Price':[np.nan],
-            'LongStopLossId':[np.nan], 'Closed Buy Sell-Price':[np.nan], 
+            'Sell Stop-Limit Id':[np.nan], 'Buy Stop Price':[np.nan],'Buy Limit Price':[np.nan],
+            'Buy Stop-Limit Id':[np.nan], 'Closed Buy Sell-Price':[np.nan], 
             'Closed Short Buy-Price':[np.nan],'Closed Buy Profit':[np.nan], 'Closed Short Profit':[np.nan], 
             'Commission (BNB)':[np.nan], 'Buy-BTC':[False], 'Close-BTC-Buy':[False],'Short-BTC':[False], 
             'Close-BTC-Short':[False], 'Update-SL-Buy':[False], 'Update-SL-Sell':[False]}

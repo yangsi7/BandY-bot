@@ -14,7 +14,7 @@ A=parse_pv_pairs(A,varargin); % parse varargin
 
 % retreive historical data
 addpath(genpath(A.rroot));
-[~,TMW]=IngestBinance('rroot',Rroot);
+[~,TMW]=IngestBinance('rroot',A.rroot);
 
 % Calculate technical indicators
 [varnames,tmw] = TA.strat1(TMW.h,'Timeindex', A.PredTimeIndex);
@@ -25,5 +25,5 @@ addpath(genpath(A.rroot));
 presig = zeros(size(long));
 presig(long)=1;
 presig(short)=-1;
-sig = presig(end-1:end);
+sig = presig(end-A.Xwin:end);
 

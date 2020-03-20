@@ -16,7 +16,7 @@ import time
 import matlab.engine
 import smtplib
 
-from APIpyBinance.binance.client import Client
+from APIpyBinance.client_futures import Client
 from . import fetchHistorical as fetchH
 
 def initTradeFiles(SetUp):
@@ -109,7 +109,7 @@ def waitForTicker(SetUp,TradeInfo):
     timeleft=(secs-secWakeUp-nInterval*secInterv)
     time.sleep(timeleft)
 
-def fireSig(SetUp,onlyBB):
+def fireSig(SetUp):
     # call matlab scripts 
     eng = matlab.engine.start_matlab()
     eng.addpath(SetUp["paths"]["matlab"])
@@ -119,14 +119,12 @@ def fireSig(SetUp,onlyBB):
     try:
         # Fire Buy/Short/Sell signals
 #        signal = eng.fireSigForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
-        sig = eng.FireSignalWithBB('rroot',SetUp["paths"]["rroot"],'model',
-                SetUp["paths"]["model"],'Xwin',1)
+        sig = eng.fireSig('rroot',SetUp["paths"]["rroot"],'Xwin',1)
         signal=float(sig[0][0])
-        BB =float(sig[0][1]) 
     except:
         print("Unexpected error:", sys.exc_info()[0])
     eng.quit()
-    return signal,BB
+    return signal
 
 def CheckNew(SetUp,TradeInfo):
     NewTicker=False

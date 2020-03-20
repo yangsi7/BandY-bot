@@ -23,7 +23,7 @@ import time
 import matlab.engine
 import collections
 
-from APIpyBinance.binance.client import Client
+from APIpyBinance.client_futures import Client
 from . import params as ini 
 from .YbotUtils import initTradeFiles,\
         save_obj, load_obj, binFloat, \
@@ -32,41 +32,13 @@ from .YbotUtils import AutoVivification as av
 from . import fetchHistorical as fetchH
 
 # Strategy done in matlab
-# Now need function to
-    # (1) Check for existing trades()
-    # (2) Start orders if needed
-    # (3) Set Stop-loses / Limit orders of needed
-    # (4) Close orders if needed
-    # (5) Keep track of trades / profits 
-    # (6) Trigger plotting routine
-    # (7) upload to browser
-    # (8) update automatically?
-
-# Notes
-    # 28 Nov 2019
-#       # Consider switching to mySQL instead of CSV 
-#       # Need to test Class that triggers orders
-#       # Need to retrain model on newer dates
-#   # 29 Nov 2019
-#        # Need to go through Class CurrentTrade
-#          and check that all selfs are updated 
-#    # 5 Dec 2019
-#        # Using module with functions instead of a class
-#        # Each function is called with dicts "SetUp" and 
-#         "TradeInfo" as arguments
-#        # SetUp contains all the paths and parameters specific
-#          to this set-up and is initialized in runYanginoBot.py
-#        # TradeInfo contains information about any current trades
-#          and is initialized or set to its value in a saved pickle
-#        # strategy has changed: now using stop-limit for both 
-#          buys and sells. 
-#        # Tested subfunctions:
-#            # buyOrder
-#            # stopLoss
-#            # updateStopLoss (need to see if it fails or not when limit is hit)
-#            # shortrder
-def TakeAction(TradeInfo,signal,BB,SetUp):
-    BBstr = 'bullish' if signal == 1 else 'bearish'
+def TakeAction(TradeInfo,signal,SetUp):
+    if signal == 1:
+        BBstr = 'bullish' 
+    elif signal == -1:
+        BBstr = 'bearish'
+    else:
+        BBstr = 'neutral'
     print('-----')
     print('--- Market is *'+BBstr+'*.')
 

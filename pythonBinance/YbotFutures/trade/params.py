@@ -18,7 +18,7 @@ def initSetUp():
     SetUp['paths']["secure"]=rroot+"secure/"+Exchange+"API.txt"
     SetUp['paths']["csvwrite"]=rroot+"pythonBinance/Data/"
     SetUp['paths']["trade"]=rroot+"pythonBinance/TradeData/"
-    SetUp['paths']["matlab"]=rroot+"functions/"
+    SetUp['paths']["matlab"]=rroot+"matscripts/functions/"
     SetUp['paths']["model"]="StackedJan10.mat"
     SetUp["trade"]["Case"]="Dec2019"
     SetUp['FuturesDateStart']="12 Sep, 2019"
@@ -46,8 +46,8 @@ def initSetUp():
     SetUp["trade"]["TFee"]=0.02
 
     # Trading parameters
-    SetUp["trade"]["Leverage"]=20
-    SetUp["trade"]["PercentFunds"]=0.3
+    SetUp["trade"]["Leverage"]=3
+    SetUp["trade"]["PercentFunds"]=0.1
     SetUp["trade"]["Slip"]=1.005
     SetUp["trade"]["Long"]=0.2
     SetUp["trade"]["Short"]=0.8

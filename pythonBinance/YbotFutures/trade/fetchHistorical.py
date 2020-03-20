@@ -13,7 +13,8 @@ import argparse
 import pickle
 import pandas as pd
 from . import params as ini
-from APIpyBinance.binance.client import Client
+from APIpyBinance.client_futures import Client as ClientFutures
+from APIpyBinance.client import Client as ClientExchange
 
 
 def main(args):

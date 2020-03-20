@@ -52,8 +52,8 @@ def main():
                         break
                 else:
 
-                    signal,BB = fireSig(SetUp,0)
-                    TradeInfo=trade.TakeAction(TradeInfo,signal,BB,SetUp)
+                    signal = fireSig(SetUp)
+                    TradeInfo=trade.TakeAction(TradeInfo,signal,SetUp)
                     sys.stdout.flush()
                     NewTicker = False
 #                    plotOutput.plotBot()

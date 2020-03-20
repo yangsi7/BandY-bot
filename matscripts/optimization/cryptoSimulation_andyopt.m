@@ -10,10 +10,11 @@ A.tp1=0.7/100;
 A.tp2=2.1/100;
 A.dnSL=0;
 A.strategy = 'Andy';
+A.slfix = 1;
 A.slscale1 = 1;
-A.slscale2 = 1;
-A.slscale3 = 1;
-A.slscale4 = 1;
+A.slscale2 = 2;
+A.lstop = 0.04;
+A.sstop = 0.04;
 A=parse_pv_pairs(A,varargin);
 
 
@@ -36,7 +37,7 @@ stopLoss = nan(1,size(tmw,1));
 limitOrder=nan(1,size(tmw,1));
 
    % Get buy & sell signals
-   [buySig, shortSig]=strategy_andy(tmw,'strategy',A.strategy);
+   [buySig, shortSig]=strategy(tmw,'strategy',A.strategy);
    idxSigs = find(buySig|shortSig);
    idxBuySigs = find(buySig);
    idxShortSigs = find(shortSig);
@@ -65,13 +66,14 @@ limitOrder=nan(1,size(tmw,1));
          else;short.sharesSold(i) = short.sharesSold(i-1);end;
       if i == 1; bought.tp1(i) = 0; else bought.tp1(i) = bought.tp1(i-1); end;
       if i == 1; short.tp1(i) = 0; else short.tp1(i) = short.tp1(i-1); end;
-      
-      xx = tmw.atr(i)./tmw.jma(i);
-      A.lstop = (A.slscale1+ A.slscale2.*xx +  A.slscale3.*xx.^2 + A.slscale4.*xx.^3); % Need to make adaptative to volatility
-      A.lstop(isnan(A.lstop))=0.04;
-      A.lstop(A.lstop>0.1)=0.1;
-      A.lstop(A.lstop<0.0001)=0.0001;
-      A.sstop = A.lstop; % Idem
+
+      if ~A.slfix
+         xx = tmw.atr(i)./tmw.jma(i);
+         A.lstop = (A.slscale1+ A.slscale2.*xx); % Need to make adaptative to volatility
+         A.lstop(A.lstop>0.1)=0.1;
+         A.lstop(A.lstop<0.00001)=0.00001;
+         A.sstop = A.lstop; % Idem
+      end
 
    
    
@@ -94,11 +96,11 @@ limitOrder=nan(1,size(tmw,1));
             stopLoss(i) = nan;
             bought.tp1(i) = 0;
          elseif tmpprofit > A.tp1 & ~bought.tp1(i) & tmpprofit < A.tp2
-            bought.dollsSold(i) = (1-A.MakerFee).*0.5.*bought.dollsBought(i).*(1+A.tp1);
-            Funds(i)=Funds(i)+bought.dollsSold(i)-0.5.*bought.dollsBought(i);
-            profit.bought(i) = -0.5.*bought.dollsBought(i) + bought.dollsSold(i);
-            bought.dollsBought(i) = 0.5.*bought.dollsBought(i);
-            bought.sharesBought(i) = 0.5.*bought.sharesBought(i); 
+            bought.dollsSold(i) = (1-A.MakerFee).*A.ftp.*bought.dollsBought(i).*(1+A.tp1);
+            Funds(i)=Funds(i)+bought.dollsSold(i)-A.ftp.*bought.dollsBought(i);
+            profit.bought(i) = -A.ftp.*bought.dollsBought(i) + bought.dollsSold(i);
+            bought.dollsBought(i) = (1-A.ftp).*bought.dollsBought(i);
+            bought.sharesBought(i) = (1-A.ftp).*bought.sharesBought(i); 
             stopLoss(i) = (1-tt).*tmw.Close(i);
             bought.tp1(i) = 1;
          elseif tmpprofit > A.tp2  
@@ -111,7 +113,9 @@ limitOrder=nan(1,size(tmw,1));
             bought.status(i)=0;
             bought.tp1(i)=0;
          elseif A.dnSL
-            stopLoss(i) = (1-tt).*tmw.Close(i);
+            if stopLoss(i) < (1-tt).*tmw.Close(i)
+               stopLoss(i) = (1-tt).*tmw.Close(i);
+            end
          end
 
       end
@@ -132,11 +136,11 @@ limitOrder=nan(1,size(tmw,1));
             limitOrder(i)=nan;
             short.tp1(i) = 0;
          elseif tmpprofit > A.tp1 & ~short.tp1(i) & tmpprofit < A.tp2
-            short.dollsBought(i) = (1-A.MakerFee).*0.5.*short.dollsSold(i).*(1-A.tp1);
-            Funds(i)=Funds(i)+0.5.*short.dollsSold(i)-short.dollsBought(i);
-            profit.short(i) = -short.dollsBought(i) + 0.5.*short.dollsSold(i);
-            short.dollsSold(i) = 0.5.*short.dollsSold(i);
-            short.sharesSold(i) = 0.5.*short.sharesSold(i); 
+            short.dollsBought(i) = (1-A.MakerFee).*A.ftp.*short.dollsSold(i).*(1-A.tp1);
+            Funds(i)=Funds(i)+A.ftp.*short.dollsSold(i)-short.dollsBought(i);
+            profit.short(i) = -short.dollsBought(i) + A.ftp.*short.dollsSold(i);
+            short.dollsSold(i) = (1-A.ftp).*short.dollsSold(i);
+            short.sharesSold(i) = (1-A.ftp).*short.sharesSold(i); 
             limitOrder(i) = (1+tt).*tmw.Close(i);
             short.tp1(i) = 1;
          elseif tmpprofit > A.tp2  
@@ -149,7 +153,9 @@ limitOrder=nan(1,size(tmw,1));
             short.status(i)=0;
             short.tp1(i)=0;
          elseif A.dnSL
-            limitOrder(i) = (1+tt).*tmw.Close(i);
+            if limitOrder(i) < (1+tt).*tmw.Close(i)
+               limitOrder(i) = (1+tt).*tmw.Close(i);
+            end
          end
       end
    
@@ -160,6 +166,15 @@ limitOrder=nan(1,size(tmw,1));
          bought.sharesBought(i) = (Funds(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
          bought.status(i)=1;
          stopLoss(i) = (1-A.sstop).*tmw.Close(i);
+      elseif shortSig(i) & bought.status(i) == 1
+         bought.dollsSold(i) = (1-A.MakerFee).*bought.sharesBought(i)*stopLoss(i);
+         Funds(i)=Funds(i)+bought.dollsSold(i)-bought.dollsBought(i);
+         profit.bought(i) = -bought.dollsBought(i) + bought.dollsSold(i);
+         bought.dollsBought(i)=0;
+         bought.sharesBought(i)=0;
+         bought.status(i)=0;
+         stopLoss(i) = nan;
+         bought.tp1(i) = 0;
       end
    
       % Shorting
@@ -169,6 +184,15 @@ limitOrder=nan(1,size(tmw,1));
          short.sharesSold(i) = (Funds(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
          short.status(i)=1;
          limitOrder(i) = (1+A.lstop).*tmw.Close(i);
+      elseif buySig(i) & short.status(i) ==1
+         short.dollsBought(i) = (1-A.MakerFee).*short.sharesSold(i)*limitOrder(i);
+         Funds(i)=Funds(i)+short.dollsSold(i)-short.dollsBought(i);
+         profit.short(i) = -short.dollsBought(i) + short.dollsSold(i);
+         short.dollsSold(i)=0;
+         short.sharesSold(i)=0;
+         short.status(i)=0;
+         limitOrder(i)=nan;
+         short.tp1(i) = 0;
       end
    
    end

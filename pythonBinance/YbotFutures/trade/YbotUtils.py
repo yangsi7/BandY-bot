@@ -21,17 +21,19 @@ from . import fetchHistorical as fetchH
 
 def initTradeFiles(SetUp):
     acc = getBalance(SetUp)    
+    apiK = open(SetUp['paths']['secure'], 'r').read().split('\n')
+    client = Client(apiK[0], apiK[1])
     if not os.path.isfile(SetUp['paths']["TradeInfo"]):
         toDf = {'Open timestmp':[np.nan],'Open dtime':[np.nan], 'Close timestmp':[np.nan],
             'Close dtime':[np.nan], 'timestmp':[int(time.time())], 'Signal':[np.nan], 'BB':[np.nan], 
             'Free Funds':[acc['USDT']['mBalance']],'Total Assets':[acc['wBalance']],
             'BTC Bought':[np.nan],'BTCUSDT Buy Price':[np.nan], 'LongOrderID':[np.nan],
-            'LongOrderID1':[np.nan],'LongOrderID2':[np.nan],
+            'LongOrderID1':[np.nan],'LongOrderID2':[np.nan], 'tp1':[np.nan], 'tp2':[np.nan],
             'BTC Shorted':[np.nan], 'BTCUSDT Short Price':[np.nan], 'ShortOrderID':[np.nan],
-            'ShortOrderID1':[np.nan], 'ShortOrderID2':[np.nan],
+            'ShortOrderID1':[np.nan], 'ShortOrderID2':[np.nan], 'TP1ID':[np.nan], 'TP2ID':[np.nan],
             'BTC Borrowed Id':[np.nan], 'Sell Stop Price':[np.nan],'Sell Limit Price':[np.nan], 
             'ShortStopLossId':[np.nan], 'Buy Stop Price':[np.nan],'Buy Limit Price':[np.nan],
-            'LongStopLossId':[np.nan], 'Closed Buy Sell-Price':[np.nan], 
+            'LongStopLossId':[np.nan], 'Closed Buy Sell-Price':[np.nan], 'TP1Price':[np.nan], 'TP2Price':[np.nan], 
             'Closed Short Buy-Price':[np.nan],'Closed Buy Profit':[np.nan], 'Closed Short Profit':[np.nan], 
             'Commission (BNB)':[np.nan], 'Buy-BTC':[False], 'Close-BTC-Buy':[False],'Short-BTC':[False], 
             'Close-BTC-Short':[False], 'Update-SL-Buy':[False], 'Update-SL-Sell':[False]}
@@ -46,8 +48,8 @@ def initTradeFiles(SetUp):
 
         # Cancel spurious Stop-Limit Sell orders
         if 0 < len(acc['openSellOrders']) < 2:
-            if int(acc['openSellOrders'][0]['orderId']) != int(TradeInfo['Sell Stop-Limit Id'][0]):
-                TradeInfo['Sell Stop-Limit Id'] = int(acc['openSellOrders'][0]['orderId'])
+            if int(acc['openSellOrders'][0]['orderId']) != TradeInfo['LongStopLossId'][0]:
+                TradeInfo['LongStopLossId'] = int(acc['openSellOrders'][0]['orderId'])
         elif len(acc['openSellOrders']) > 1:
             print('More than one Stop Sell Order... Keeping the latest one')
             ttimes = [i["time"] for i in acc['openSellOrders']]
@@ -60,8 +62,8 @@ def initTradeFiles(SetUp):
                     orderId=acc['openSellOrders'][i]["orderId"])
         # Cancel spurious Stop-Limit Buy orders
         if 0 < len(acc['openBuyOrders']) < 2:
-            if int(acc['openBuyOrders'][0]['orderId']) != int(TradeInfo['Buy Stop-Limit Id'][0]):
-                TradeInfo['Buy Stop-Limit Id'] = int(acc['openBuyOrders'][0]['orderId'])
+            if int(acc['openBuyOrders'][0]['orderId']) != TradeInfo['ShortStopLossId'][0]:
+                TradeInfo['ShortStopLossId'] = int(acc['openBuyOrders'][0]['orderId'])
         elif len(acc['openBuyOrders']) > 1:
             print('More than one Stop Buy Order... Keeping the latest one')
             ttimes = [i["time"] for i in acc['openBuyOrders']]

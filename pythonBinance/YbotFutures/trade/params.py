@@ -54,10 +54,11 @@ def initSetUp():
     SetUp["trade"]["CloseLong"]=0.65
     SetUp["trade"]["CloseShort"]=0.35
     SetUp["trade"]["Stop"]=0.04
-    SetUp["trade"]["StopLimitSell"]=[0.04, 0.02]
-    SetUp["trade"]["StopBuy"]=[0.025, 0.005]
-    SetUp["trade"]["StopLimitBuy"]=[0.04, 0.02]
-    SetUp["trade"]["TPstop"]=[0.007, 0.021]
+    SetUp["trade"]["StopClose"]=0.002
+    SetUp["trade"]["Stoplimitadd"]=0.02
+    SetUp["trade"]["tp1"]=0.007
+    SetUp["trade"]["tp2"]= 0.021
+    SetUp["trade"]["ftp"]=0.5
     SetUp["trade"]["TPlimitadd"]=0.01
 
 

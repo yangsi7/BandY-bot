@@ -7,34 +7,34 @@ classdef TA
          A.ParamStruct = [];
          % Default parameters
          % range filter
-         A.rf.per = 28; A.rf.mult=1.3;
+         A.rfper = 28; A.rfmult=1.3;
          % rsi (volume weighted)
-         A.rsi.per = 21; 
+         A.rsiper = 21; 
          % Jurik MA
-         A.jma.L=20; A.jma.phi=21; A.jma.pow=2;
+         A.jmaL=20; A.jmaphi=21; A.jmapow=2;
          % Average True Rance
-         A.atr.per = 120;
+         A.atrper = 28*3;
          % ADX
-         A.adx.per = 17;
+         A.adxper = 17;
          % MACD      
-         A.macd.fast=8; A.macd.long=14; A.macd.signal=11;
+         A.macdfast=8; A.macdlong=14; A.macdsignal=11;
          % Parabolic sar
-         A.sar.inc=0.5; A.sar.mmax=0.12;
+         A.sarinc=0.5; A.sarmmax=0.12;
          % svol volume indicator
-         A.svol.per = 42; A.svol.f=1.2;
+         A.svolper = 42; A.svolf=1.2;
          % parse
          A=parse_pv_pairs(A,varargin);
          if ~isempty(A.ParamStruct); A=A.ParamStruct;end;
 
          % Calculate indicators
-         tmw = TA.rngFilt(tmw,'per',A.rf.per,'mult',A.rf.mult);
-         tmw = TA.jma(tmw, 'L', A.jma.L, 'phi', A.jma.phi, 'pow', A.jma.phi);
-         tmw = TA.rsiv(tmw, 'per',  A.rsi.per);
-         tmw = TA.atr(tmw, 'per', A.atr.per);
-         tmw = TA.adx(tmw, 'per', A.adx.per);
-         tmw = TA.macd(tmw, 'fast', A.macd.fast, 'long', A.macd.long, 'signal', A.macd.signal);
-         tmw = TA.sar(tmw, 'inc', A.sar.inc, 'mmax', A.sar.mmax);
-         tmw = TA.svol(tmw,'per', A.svol.per, 'f', A.svol.f);
+         tmw = TA.rngFilt(tmw,'per',A.rfper,'mult',A.rfmult);
+         tmw = TA.jma(tmw, 'L', A.jmaL, 'phi', A.jmaphi, 'pow', A.jmaphi);
+         tmw = TA.rsiv(tmw, 'per',  A.rsiper);
+         tmw = TA.atr(tmw, 'per', A.atrper);
+         tmw = TA.adx(tmw, 'per', A.adxper);
+         tmw = TA.macd(tmw, 'fast', A.macdfast, 'long', A.macdlong, 'signal', A.macdsignal);
+         tmw = TA.sar(tmw, 'inc', A.sarinc, 'mmax', A.sarmmax);
+         tmw = TA.svol(tmw,'per', A.svolper, 'f', A.svolf);
 
 
          varnames=(tmw.Properties.VariableNames);

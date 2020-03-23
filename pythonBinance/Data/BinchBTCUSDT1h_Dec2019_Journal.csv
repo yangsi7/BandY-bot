@@ -1,5 +1,3 @@
-Open timestmp,Open dtime,Close timestmp,Close dtime,timestmp,Signal,BB,Free Funds,Total Assets,BTC Bought,BTCUSDT Buy Price,LongOrderID,LongOrderID1,LongOrderID2,BTC Shorted,BTCUSDT Short Price,ShortOrderID,ShortOrderID1,ShortOrderID2,BTC Borrowed Id,Sell Stop Price,Sell Limit Price,ShortStopLossId,Buy Stop Price,Buy Limit Price,LongStopLossId,Closed Buy Sell-Price,Closed Short Buy-Price,Closed Buy Profit,Closed Short Profit,Commission (BNB),Buy-BTC,Close-BTC-Buy,Short-BTC,Close-BTC-Short,Update-SL-Buy,Update-SL-Sell
-,,,,1584721120,,,295.06545427,{},,,,,,,,,,,,,,,,,,,,,,,False,False,False,False,False,False
-,,1584720000.0,,1584722937,0.0,,295.06545427,{},,,,,,,,,,,,,,,,,,,,,,,False,False,False,False,False,False
-,,1584723600.0,,1584723618,0.0,,295.06545427,{},,,,,,,,,,,,,,,,,,,,,,,False,False,False,False,False,False
-,,1584727200.0,,1584727212,0.0,,295.06545427,{},,,,,,,,,,,,,,,,,,,,,,,False,False,False,False,False,False
+Open timestmp,Open dtime,Close timestmp,Close dtime,timestmp,Signal,BB,Free Funds,Total Assets,BTC Bought,BTCUSDT Buy Price,LongOrderID,LongOrderID1,LongOrderID2,tp1,tp2,BTC Shorted,BTCUSDT Short Price,ShortOrderID,ShortOrderID1,ShortOrderID2,TP1ID,TP2ID,BTC Borrowed Id,Sell Stop Price,Sell Limit Price,ShortStopLossId,Buy Stop Price,Buy Limit Price,LongStopLossId,Closed Buy Sell-Price,TP1Price,TP2Price,Closed Short Buy-Price,Closed Buy Profit,Closed Short Profit,Commission (BNB),Buy-BTC,Close-BTC-Buy,Short-BTC,Close-BTC-Short,Update-SL-Buy,Update-SL-Sell
+,,,,1584959646,,,294.97812345,{},,,,,,,,,,,,,,,,,,,,,,,,,,,,,False,False,False,False,False,False
+,,1584957600.0,,1584959653,0.0,,295.87345349,{},,,,,,,,0.014,5813.0,,2020364133.0,2020364491.0,,,,,,,,,,,,,,,,,False,False,True,False,False,False

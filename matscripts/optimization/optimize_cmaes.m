@@ -49,7 +49,6 @@ AllParam = {
 %     Remember to remove the corresponding K from the parameter pool!
 %     (suggestion: remove KDen1, since first step drives everuthing)
 % Calculates useful quantities for normalization, optimization, etc.
- nPar = 4
  ParMean = (ParMin + ParMax)/2';
  ParRange = ParMax - ParMin;
  ParNorm = ParRange;

@@ -1,6 +1,6 @@
 function [ccost maxdrawdown SumPerf action] = cryptoSim(tmw,varargin)
 
-A.params=2;
+A.params=3;
 A.StartFund=10000;
 A.useFund=0.95;
 A.reInvest=1;
@@ -42,6 +42,23 @@ elseif A.params == 2
    A.presstop = 0.01077;
    A.adxth=13.7;
    A.rsiobos=62.1;
+elseif A.params == 3
+   A.tp1=1;
+   A.tp2=1;
+   A.tp1scale=1;
+   A.tp2scale=1;
+   A.dnSL=1;
+   A.ftp=0.47;
+   A.slfix = 0;
+   A.slscale1 = 5;
+   A.slscale2 = 1.39;
+   A.slscale3 = 0.001;
+   A.slscale4 = 0.5;
+   A.slmax = 0.0551;
+   A.prelstop = 0.036035;
+   A.presstop = 0.031029;
+   A.adxth=5;
+   A.rsiobos=80;
 end
 
 A=parse_pv_pairs(A,varargin);

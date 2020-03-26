@@ -6,4 +6,5 @@
 /python-binance/.DS_Store
 /python-binance/scripts/.*
 /python-binance/scripts/__pycache__/*
+pythonBinance/YbotFutures/trade/*.dat
 

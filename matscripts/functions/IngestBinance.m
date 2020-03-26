@@ -27,7 +27,10 @@ ddat.datetime = datetime(ddat.militime,'ConvertFrom','posixtime','TimeZone','');
 TMW.h = timetable(ddat.open,ddat.high,ddat.low,ddat.close,ddat.volume, ...
     'VariableNames',{'Open','High','Low','Close','Volume'},'RowTimes',ddat.datetime);
 
-idx=find(TMW.h.Close ==0 | TMW.h.Open ==0);
+idx=find(TMW.h.Close == 0 | TMW.h.Open == 0 | TMW.h.High == 0 | TMW.h.Low==0);
+if ~isempty(idx); TMW.h{idx,:}=nan; end;
+
+idx=find(TMW.h.Close ==inf | TMW.h.Open ==inf | TMW.h.High == inf | TMW.h.Low==inf);
 if ~isempty(idx); TMW.h{idx,:}=nan; end;
 
 TMW.h = fillmissing(TMW.h,'linear');

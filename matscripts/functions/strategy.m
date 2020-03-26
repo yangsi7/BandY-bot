@@ -1,8 +1,9 @@
 function [long, short] = strategy(tmw,varargin)
 
 A.strat = 'Andy';
-a.adx.th = 17;
-A.rsi.obos = 52;
+A.adxth = 15;
+A.adx_jma = 1;
+A.rsiobos = 58.7;
 A=parse_pv_pairs(A,varargin);
 
 % Initialize signals
@@ -29,17 +30,25 @@ if strcmp(A.strat,'Andy')
 
    blong.jma(tmw.djma > 0) = true;
    blong.rf(tmw.High>tmw.rf_hb & tmw.rf_uwrd > 0) = true;
-   blong.adx(tmw.adx_dip > tmw.adx_dim & tmw.adx > a.adx.th) = true;
+   if A.adx_jma
+      blong.adx(tmw.adx_jma_dip > tmw.adx_jma_dim & tmw.adx_jma > A.adxth) = true;
+   else
+      blong.adx(tmw.adx_dip > tmw.adx_dim & tmw.adx > A.adxth) = true;
+   end
    blong.sar(tmw.sar < tmw.Close) = true;
-   blong.rsi(tmw.rsi_v > A.rsi.obos) = true;
+   blong.rsi(tmw.rsi_v > A.rsiobos) = true;
    blong.macd(tmw.macdH > 0) = true;
    blong.vol(tmw.Volume > tmw.svol) = true;
 
    bshort.jma(tmw.djma < 0) = true;
    bshort.rf(tmw.Low<tmw.rf_lb & tmw.rf_dwrd > 0) = true;
-   bshort.adx(tmw.adx_dip < tmw.adx_dim & tmw.adx > a.adx.th) = true;
+   if A.adx_jma
+      bshort.adx(tmw.adx_jma_dip < tmw.adx_jma_dim & tmw.adx_jma > A.adxth) = true;
+   else
+      bshort.adx(tmw.adx_jma_dip < tmw.adx_jma_dim & tmw.adx_jma > A.adxth) = true;
+   end
    bshort.sar(tmw.sar > tmw.Close) = true;
-   bshort.rsi(tmw.rsi_v < A.rsi.obos) = true;
+   bshort.rsi(tmw.rsi_v < A.rsiobos) = true;
    bshort.macd(tmw.macdH < 0) = true;
    bshort.vol(tmw.Volume > tmw.svol) = true;
 

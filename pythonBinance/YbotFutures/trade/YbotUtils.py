@@ -25,18 +25,27 @@ def initTradeFiles(SetUp):
     client = Client(apiK[0], apiK[1])
     if not os.path.isfile(SetUp['paths']["TradeInfo"]):
         toDf = {'Open timestmp':[np.nan],'Open dtime':[np.nan], 'Close timestmp':[np.nan],
-            'Close dtime':[np.nan], 'timestmp':[int(time.time())], 'Signal':[np.nan], 'BB':[np.nan], 
+            'Close dtime':[np.nan], 'timestmp':[int(time.time())], 'Signal':[np.nan],
             'Free Funds':[acc['USDT']['mBalance']],'Total Assets':[acc['wBalance']],
             'BTC Bought':[np.nan],'BTCUSDT Buy Price':[np.nan], 'LongOrderID':[np.nan],
             'LongOrderID1':[np.nan],'LongOrderID2':[np.nan], 'tp1':[np.nan], 'tp2':[np.nan],
             'BTC Shorted':[np.nan], 'BTCUSDT Short Price':[np.nan], 'ShortOrderID':[np.nan],
-            'ShortOrderID1':[np.nan], 'ShortOrderID2':[np.nan], 'TP1ID':[np.nan], 'TP2ID':[np.nan],
+            'ShortOrderID1':[np.nan], 'ShortOrderID2':[np.nan], 'lTP1ID':[np.nan], 'lTP2ID':[np.nan],
+            'lTPuID':[np.nan], 'sTP1ID':[np.nan], 'sTP2ID':[np.nan],'sTPuID':[np.nan],
             'BTC Borrowed Id':[np.nan], 'Sell Stop Price':[np.nan],'Sell Limit Price':[np.nan], 
             'ShortStopLossId':[np.nan], 'Buy Stop Price':[np.nan],'Buy Limit Price':[np.nan],
-            'LongStopLossId':[np.nan], 'Closed Buy Sell-Price':[np.nan], 'TP1Price':[np.nan], 'TP2Price':[np.nan], 
+            'LongStopLossId':[np.nan], 'Closed Buy Sell-Price':[np.nan], 'CprlTP1':[np.nan], 'CprlTP2':[np.nan], 
+            'CprlTPu':[np.nan],'CprsTP1':[np.nan], 'CprsTP2':[np.nan], 'CprsTPu':[np.nan],
             'Closed Short Buy-Price':[np.nan],'Closed Buy Profit':[np.nan], 'Closed Short Profit':[np.nan], 
             'Commission (BNB)':[np.nan], 'Buy-BTC':[False], 'Close-BTC-Buy':[False],'Short-BTC':[False], 
-            'Close-BTC-Short':[False], 'Update-SL-Buy':[False], 'Update-SL-Sell':[False]}
+            'Close-BTC-Short':[False], 
+            'Update-SL-Buy':[False], 'Update-SL-Sell':[False], 'BlSLh':[False],'BsSLh':[False],'BprlSL':[np.nan],
+            'BprsSL':[np.nan],'BlO':[False],'BsO':[False],'BprlO':[np.nan],
+            'BprsO':[np.nan],'Blprofit':[np.nan],'btclO':[np.nan],'btcsO':[np.nan],
+            'Bsprofit':[np.nan], 'BlTP1h':[False], 'BlTP2h':[False],'BlTPuh':False,'BprlTP1h':[np.nan], 
+            'BprlTP2h':[np.nan],'BprlPuh':[np.nan],
+            'BsTP1h':[False], 'BsTP2h':[False],'BsTPuh':False,'BprsTP1h':[np.nan], 
+            'BprsTP2h':[np.nan],'BprsPuh':[np.nan]}
         TradeInfo =  pd.DataFrame(toDf)    
         TradeInfo.to_csv(SetUp['paths']["TradeInfo"],index=False)
     else:
@@ -74,6 +83,20 @@ def initTradeFiles(SetUp):
                 cancelOut=client.cancel_order(
                     symbol=SetUp["trade"]["pair"],
                     orderId=acc['openBuyOrders'][i]["orderId"])
+
+        if acc['BTCUSDT']!={}:
+            if acc['BTCUSDT']['side'] == 'SELL':
+                TradeInfo['btcsO'] = acc['BTCUSDT']['iMarginPair']
+                TradeInfo['BprsO'] = acc['BTCUSDT']['ePrice']
+                TradeInfo['btclO'] = np.nan
+                TradeInfo['BprlO'] = np.nan
+            elif acc['BTCUSDT']['side'] == 'BUY':
+                TradeInfo['btclO'] = acc['BTCUSDT']['iMarginPair']
+                TradeInfo['BprlO'] = acc['BTCUSDT']['ePrice']
+                TradeInfo['btcsO'] = np.nan
+                TradeInfo['BprsO'] = np.nan
+
+
     return TradeInfo
 
 def csvreadEnd(csvfile, nrows):
@@ -101,13 +124,6 @@ def waitForTicker(SetUp,TradeInfo):
     print('---> Going to sleep')
     for tt in range(0,nInterval):
         time.sleep(secInterv)
-#        a,BB = fireSig(SetUp,1)
-#        BBstr='bullish' if BB else 'bearish' 
-#        print(BBstr+'...'+str((secs-secWakeUp-(tt+1)*secInterv)//60)+'min left...',end = '')
-#        sys.stdout.flush()        
-#        if BB != TradeInfo['BB'][0]:
-#            print('Reversal! BB turned '+BBstr)
-#            TradeInfo=trade.TakeAction(TradeInfo,TradeInfo['Signal'][0],BB,SetUp)
     timeleft=(secs-secWakeUp-nInterval*secInterv)
     time.sleep(timeleft)
 
@@ -115,18 +131,25 @@ def fireSig(SetUp):
     # call matlab scripts 
     eng = matlab.engine.start_matlab()
     eng.addpath(SetUp["paths"]["matlab"])
-#    nrows = int(eng.getMaxWinForPython('model',SetUp["paths"]["model"]))
-#    rows = fetch_recent.main(SetUp,['-window',str(nrows+1)])
-#    rows = [[float(i) for i in j] for j in rows]
     try:
         # Fire Buy/Short/Sell signals
-#        signal = eng.fireSigForPython(matlab.double(rows),'model',SetUp["paths"]["model"])
         sig = eng.fireSig('rroot',SetUp["paths"]["rroot"],'Xwin',1)
-        signal=float(sig[0][0])
+        signal=sig
     except:
         print("Unexpected error:", sys.exc_info()[0])
     eng.quit()
     return signal
+
+def plotBot(SetUp):
+    # call matlab scripts 
+    eng = matlab.engine.start_matlab()
+    eng.addpath(SetUp["paths"]["matlab"])
+    try:
+        # Fire Buy/Short/Sell signals
+        a = eng.plotBot()
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+    eng.quit()
 
 def CheckNew(SetUp,TradeInfo):
     NewTicker=False
@@ -176,6 +199,19 @@ def getBalance(SetUp):
         acc[i['asset']]['oMargin']=float(i['openOrderInitialMargin'])
         acc[i['asset']]['iMargin']=float(i['initialMargin'])
         acc[i['asset']]['pMargin']=float(i['positionInitialMargin'])
+
+    b = client.get_positions()
+    for i in b:
+        if float(i['positionAmt'])==0:
+            continue
+        acc[i['symbol']]['iMarginUSDT']=float(i['entryPrice'])*abs(float(i['positionAmt']))
+        acc[i['symbol']]['iMarginPair']=abs(float(i['positionAmt']))
+        acc[i['symbol']]['side'] = 'SELL' if float(i['positionAmt']) < 0  else 'BUY'
+        acc[i['symbol']]['ePrice']=float(i['entryPrice'])
+        acc[i['symbol']]['uProfit']=float(i['unRealizedProfit'])
+        acc[i['symbol']]['leverage']=float(i['leverage'])
+        acc[i['symbol']]['cPrice']=float(i['entryPrice'])-float(i['unRealizedProfit'
+            ])/acc[i['symbol']]['iMarginPair']
 
     nullAssets = list(set(list(acc.keys()))^set(['USDT','BTC','BNB','total']))
     for i in nullAssets:

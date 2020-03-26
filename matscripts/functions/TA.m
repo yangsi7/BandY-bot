@@ -13,15 +13,16 @@ classdef TA
          % Jurik MA
          A.jmaL=20; A.jmaphi=21; A.jmapow=2;
          % Average True Rance
-         A.atrper = 28*3;
+         A.atrper = 92;
          % ADX
          A.adxper = 17;
          % MACD      
-         A.macdfast=8; A.macdlong=14; A.macdsignal=11;
+         A.macdfast=8; A.macdlong=3; A.macdsignal=3;
          % Parabolic sar
          A.sarinc=0.5; A.sarmmax=0.12;
          % svol volume indicator
          A.svolper = 42; A.svolf=1.2;
+         A.bollper = 28;
          % parse
          A=parse_pv_pairs(A,varargin);
          if ~isempty(A.ParamStruct); A=A.ParamStruct;end;
@@ -32,9 +33,11 @@ classdef TA
          tmw = TA.rsiv(tmw, 'per',  A.rsiper);
          tmw = TA.atr(tmw, 'per', A.atrper);
          tmw = TA.adx(tmw, 'per', A.adxper);
+         tmw = TA.adx_jma(tmw, 'per', A.adxper);
          tmw = TA.macd(tmw, 'fast', A.macdfast, 'long', A.macdlong, 'signal', A.macdsignal);
          tmw = TA.sar(tmw, 'inc', A.sarinc, 'mmax', A.sarmmax);
          tmw = TA.svol(tmw,'per', A.svolper, 'f', A.svolf);
+         tmw = TA.bollfrange(tmw,'per', A.bollper);
 
 
          varnames=(tmw.Properties.VariableNames);
@@ -110,12 +113,31 @@ classdef TA
          atr = TA.indicators([tmw.High,tmw.Low,tmw.Close],'atr',A.per);
          tmw=addvars(tmw,atr,'NewVariableNames','atr');
       end % atr 
+      function tmw = bollfrange(tmw, varargin)
+      % ------------
+      % Average true range
+      % ------------
+         A.per = 20;
+         A.weight=0;
+         A.nstd = 2;
+         A=parse_pv_pairs(A,varargin);
+
+         a = TA.indicators(...
+            nanmean([tmw.High,tmw.Low,tmw.Close,tmw.Open],2),'boll',A.per,A.weight,A.nstd);
+         middle = a(:,1);
+         upper = a(:,2);
+         lower = a(:,3);
+         fbollup = (upper-middle)./middle;
+         fbolllo = (middle-lower)./middle;
+         tmw=addvars(tmw,fbollup,'NewVariableNames','fbollup');
+         tmw=addvars(tmw,fbolllo,'NewVariableNames','fbolllo');
+      end % bollfrange
 
       function tmw = jma(tmw, varargin)
       % ------------
       % Jurik moving average
       % ------------
-         A.L=20; A.phi=21; A.pow=2;
+         A.L=50; A.phi=A.L*7; A.pow=2;
          A=parse_pv_pairs(A,varargin);
 
          %Phase ratio
@@ -132,24 +154,37 @@ classdef TA
          
          %Alpha
           Alpha = Beta.^A.pow;
-         
-          price = tmw.Close;
-          e0 = nan(size(tmw.Close)); e0(1)=(1-Alpha)*price(1);
-          e1 = nan(size(tmw.Close)); e1(1)=(price(1)-e0(1))*(1-Beta);
-          e2 = nan(size(tmw.Close)); e2(1)=(e0(1)+phi_r*e1(1));
-          e3 = nan(size(tmw.Close)); e3(1)=e2(1)*(1-Alpha)^2;
-          jma = nan(size(tmw.Close)); jma(1)=e3(1);
-          for i = 2 : length(tmw.Close)
+          
+         if istimetable(tmw)
+            price = tmw.Close;
+         else
+            price = tmw;
+         end
+
+         idxnn = find(~isnan(price));
+         idx1=idxnn(1)+A.L;
+
+          e0 = zeros(size(price)); 
+          e1 = zeros(size(price)); 
+          e2 = zeros(size(price)); 
+          e3 = zeros(size(price)); 
+          jma = zeros(size(price)); 
+          for i = idx1+A.L : length(price)
             e0(i) = (1-Alpha)*price(i) + Alpha*e0(i-1);
             e1(i) = (price(i)-e0(i))*(1-Beta)+Beta*(e1(i-1));
             e2(i) = e0(i) + phi_r*e1(i);
             e3(i) = (e2(i) - jma(i-1))*(1-Alpha)^2+Alpha^2*e3(i-1);
             jma(i) = e3(i)+jma(i-1);
           end
+         jma(1:idx1+A.L-1)=nan;
          djma = nan(size(jma));
          djma(2:end) = jma(2:end)-jma(1:end-1);
-         tmw=addvars(tmw,jma,'NewVariableNames','jma');
-         tmw=addvars(tmw,djma,'NewVariableNames','djma');
+         if istimetable(tmw)
+            tmw=addvars(tmw,jma,'NewVariableNames','jma');
+            tmw=addvars(tmw,djma,'NewVariableNames','djma');
+         else
+            tmw = jma;
+         end
       end
 
       function tmw = adx(tmw, varargin)
@@ -169,6 +204,22 @@ classdef TA
 	tmw=addvars(tmw,adx_dim,'NewVariableNames','adx_dim');
      end % adx
 
+      function tmw = adx_jma(tmw, varargin)
+      % ------------
+      % Average directional movement index (ADX/DMI)
+      % ------------
+         A.per = 17;
+         A=parse_pv_pairs(A,varargin);
+
+	a=TA.indicators([tmw.High,tmw.Low,tmw.Close],'adx_jma',A.per);
+	adx_jma_dip=a(:,1);
+        adx_jma_dim=a(:,2);
+	adx_jma=a(:,3);
+
+	tmw=addvars(tmw,adx_jma,'NewVariableNames','adx_jma');
+	tmw=addvars(tmw,adx_jma_dip,'NewVariableNames','adx_jma_dip');
+	tmw=addvars(tmw,adx_jma_dim,'NewVariableNames','adx_jma_dim');
+     end % adx_jma
 
       function tmw = sar(tmw, varargin)
       % ------------
@@ -212,10 +263,12 @@ classdef TA
       % ------------
       % Average directional movement index (ADX/DMI)
       % ------------
-         A.fast=8; A.long=14; A.signal=11;
+         A.fast=8; A.long=3; A.signal=3;
          A=parse_pv_pairs(A,varargin);
+         signal = A.fast + A.signal;
+         long = A.fast + A.signal+A.long;
 
-         a = TA.indicators(tmw.Close,'macd',A.fast,A.long,A.signal);
+         a = TA.indicators(tmw.Close,'macd',A.fast,long,signal);
          macdH=a(:,3);
          tmw=addvars(tmw,macdH,'NewVariableNames','macdH');
       end % macd
@@ -260,6 +313,7 @@ classdef TA
       %         ema                  = indicators(price           ,'ema'    ,period)
       %         [macd,signal,macdh]  = indicators(cl              ,'macd'   ,short,long,signal)
       %         [pdi,mdi,adx]        = indicators([hi,lo,cl]      ,'adx'    ,period)
+      %         [pdi_jma,mdi_jma,adx_jma]        = indicators([hi,lo,cl]      ,'adx_jma'    ,period)
       %         t3                   = indicators(price           ,'t3'     ,period,volfact)
       %     Volume
       %         obv                  = indicators([cl,vo]         ,'obv')
@@ -892,16 +946,67 @@ classdef TA
                  pdi14 = 100*pdm14./tr14;                    % 14 period plus directional indicator
                  mdi14 = 100*mdm14./tr14;                    % 14 period minus directional indicator
                  dmx   = 100*abs(pdi14-mdi14)./(pdi14+mdi14);% directional movement index
-                 
                  % Average Directional Index
                  adx(2*period) = sum(dmx(period+1:2*period))/(2*period-period-1);
                  for i1 = 2*period+1:observ
                      adx(i1) = (adx(i1-1)*(period-1)+dmx(i1))/period;
-                 end
-                 
+                 end 
+                           
                  % Format Output
                  vout = [pdi14,mdi14,adx];
                  
+             case 'adx_jma'      % Wilder's DMI (ADX)
+                 % Input Data
+                 hi = vin(:,1);
+                 lo = vin(:,2);
+                 cl = vin(:,3);
+                 
+                 % Variable argument input
+                 if isempty(varargin)
+                     period = 14;
+                 else
+                     period = varargin{1};
+                 end
+                 
+                 % True range
+                 h_m_l = hi-lo;                                   % high - lo
+                 h_m_c = [0;abs(hi(2:observ)-cl(1:observ-1))];  % abs(high - close)
+                 l_m_c = [0;abs(lo(2:observ)-cl(1:observ-1))];   % abs(low - close)
+                 tr = max([h_m_l,h_m_c,l_m_c],[],2);                 % true rang
+                 
+                 % Directional Movement
+                 h_m_h = hi(2:observ)-hi(1:observ-1);            % high - hig
+                 l_m_l = lo(1:observ-1)-lo(2:observ);              % low - low
+                 pdm1  = zeros(observ-1,1);                          % preallocate pdm1
+                 max_h = max(h_m_h,0);
+                 pdm1(h_m_h > l_m_l) = max_h(h_m_h > l_m_l);         % plus
+                 mdm1  = zeros(observ-1,1);                          % preallocate mdm1
+                 max_l = max(l_m_l,0);
+                 mdm1(l_m_l > h_m_h) = max_l(l_m_l > h_m_h);         % minus
+                 pdm1 = [nan;pdm1];
+                 mdm1 = [nan;mdm1];
+                 % Preallocate 14 period tr, pdm, mdm, adx
+                 tr14  = nan(observ,1);  % 14 period true range
+                 pdm14 = tr14;           % 14 period plus directional movement
+                 mdm14 = tr14;           % 14 period minus directional movement
+                 adx   = tr14;           % average directional index
+                 ttr = movsum(tr,[period,0]);
+                 tr14 = TA.jma(ttr,'L',period);
+
+                 ppdm1 = movsum(pdm1,[period,0]);
+                 pdm14 = TA.jma(ppdm1,'L',period);
+
+                 mmdm1 = movsum(mdm1,[period,0]);
+                 mdm14 = TA.jma(mmdm1,'L',period);
+
+                 pdi14_jma = 100*pdm14./tr14;                    % 14 period plus directional indicator
+                 mdi14_jma = 100*mdm14./tr14;                    % 14 period minus directional indicator
+
+                 dmx   = 100*abs(pdi14_jma-mdi14_jma)./(pdi14_jma+mdi14_jma);% directional movement index
+                 ddmx = movsum(dmx,[period,0])./period;
+                 adx_jma = TA.jma(ddmx,'L',period);
+                 % Format Output
+                 vout = [pdi14_jma,mdi14_jma,adx_jma];
              case 't3'       % T3
                  % Input Data
                  price = vin;

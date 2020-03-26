@@ -61,8 +61,15 @@ def initSetUp():
     SetUp["trade"]["ftp"]=0.5
     SetUp["trade"]["TPlimitadd"]=0.01
 
+    SetUp["trade"]["lslBase"]=0.014
+    SetUp["trade"]["sslBase"]=0.025
+    SetUp["trade"]["slScale1"]=4.01
+    SetUp["trade"]["slScale2"]=1.217
+    SetUp["trade"]["slScale3"]=0.224
+    SetUp["trade"]["slScale4"]=0.661
+    SetUp["trade"]["slMax"]=0.0405
 
-
+    SetUp["strategy"]=2
 
     # Dependant Paths
     # CSVs

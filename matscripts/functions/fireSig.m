@@ -9,6 +9,7 @@ A.model='strat1';
 A.PredTimeIndex = timerange(datetime('01-Jul-2019',...
    'Locale','en_US'),datetime('01-Jan-2200','Locale','en_US'),'closed');
 A.Xwin=1;
+A.strat=2;
 A=parse_pv_pairs(A,varargin); % parse varargin
 % ---------------
 
@@ -22,8 +23,16 @@ addpath(genpath(A.rroot));
 % Get long and short signals
 [long, short] = strategy(tmw, 'strat', 'Andy');
 
+
+
 presig = zeros(size(long));
 presig(long)=1;
 presig(short)=-1;
-sig = presig(end-A.Xwin:end);
+if A.strat==1
+   sig = presig(end-A.Xwin:end);
+elseif A.strat==2
+   lo = tmw.fbolllo;
+   up = tmw.fbollup;
+   sig = [presig(end-A.Xwin:end),lo(end-A.Xwin:end),up(end-A.Xwin:end)];
+end
 

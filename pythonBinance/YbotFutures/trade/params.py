@@ -42,12 +42,13 @@ def initSetUp():
     SetUp["trade"]["pairRef"]="USDT"
     SetUp["trade"]["pair"]="BTCUSDT"
     SetUp["trade"]["tickDt"]="1h"
+    SetUp["trade"]["ticksubDt"]="5m"
     SetUp["trade"]["MFee"]=0.04
     SetUp["trade"]["TFee"]=0.02
 
     # Trading parameters
     SetUp["trade"]["Leverage"]=3
-    SetUp["trade"]["PercentFunds"]=0.1
+    SetUp["trade"]["PercentFunds"]=0.95
     SetUp["trade"]["Slip"]=1.005
     SetUp["trade"]["Long"]=0.2
     SetUp["trade"]["Short"]=0.8
@@ -74,7 +75,9 @@ def initSetUp():
     # Dependant Paths
     # CSVs
     ffile=Exchange + SetUp["trade"]["pair"] + SetUp["trade"]["tickDt"] + ".csv"
+    ffilesub=Exchange + SetUp["trade"]["pair"] + SetUp["trade"]["ticksubDt"] + ".csv"
     SetUp['paths']["Hist"]=SetUp["paths"]["csvwrite"] + ffile
+    SetUp['paths']["Hist5m"]=SetUp["paths"]["csvwrite"] + ffilesub
     ffile=Exchange + SetUp["trade"]["pair"] + SetUp["trade"]["tickDt"]+"_"+SetUp["trade"]["Case"]+"_Journal.csv"
     # Pickles
     SetUp['paths']["LastInfo"]=SetUp["paths"]["csvwrite"] + "Binance" + SetUp["trade"]["tickDt"]

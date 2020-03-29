@@ -16,7 +16,6 @@ from . import params as ini
 from APIpyBinance.client_futures import Client as ClientFutures
 from APIpyBinance.client import Client as ClientExchange
 
-
 def main(args):
     SetUp = ini.initSetUp()    
     parser = argparse.ArgumentParser(description='Get ticker data.')

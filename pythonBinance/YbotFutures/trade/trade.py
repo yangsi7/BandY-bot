@@ -329,7 +329,7 @@ def stopLoss(SetUp,TradeInfo,side,stop):
         TradeInfo['Sell Stop Price'] = stopPrice
         qqty = binFloat(TradeInfo['btclO'][0])
     elif side == 'BUY':
-        stopPrice = binFloat((1+float(stop+limit))*LastPrice)
+        stopPrice = binFloat((1+float(stop))*LastPrice)
         limitPrice = binFloat((1+float(stop-limit))*LastPrice)
         TradeInfo['Buy Stop Price'] = stopPrice
         qqty = binFloat(TradeInfo['btcsO'][0])

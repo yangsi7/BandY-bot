@@ -6,7 +6,28 @@ function out = plotBot()
    Rroot='/home/euphotic_/yangino-bot/';
    addpath(genpath(Rroot));
    [~,TMW]=IngestBinance('rroot',Rroot);
-   [varnames,tmw] = TA.strat1(TMW.h,'Timeindex', ttime,'atrper',92);
+strat = 2;
+if strat == 2
+   [varnames,tmw] = TA.strat1(TMW.h,'Timeindex', ttime,...
+      'rfper',15,...
+      'rfmult',1.68,...
+      'rsiper',18.2,...
+      'jmaL',22,...
+      'jmaphi', 70,...
+      'jmapow',2.8837,...
+      'adxper',19,...
+      'bollper',13,...
+      'macdfast',9,...
+      'macdsignal',12,...
+      'macdlong',12,...
+      'sarinc',0.65,...
+      'sarmmax',0.041,...
+      'svolper',42,...
+      'svolf',1.77 ...
+      );
+else
+   [varnames,tmw] = TA.strat1(TMW.h,'Timeindex', ttime);
+end
    [gains, drawdown,SumPerf,action] = cryptoSimulation_andyopt(tmw);
    
    
@@ -15,12 +36,14 @@ function out = plotBot()
    idxLongsl = find(action.long.sl);
    idxLongtp1 = find(action.long.tp1);
    idxLongtp2 = find(action.long.tp2);
+   idxLongSig = find(action.buySig);
    
    idxShortopen = find(action.short.open);
    idxShortclose = find(action.short.close);
    idxShortsl = find(action.short.sl);
    idxShorttp1 = find(action.short.tp1);
    idxShorttp2 = find(action.short.tp2);
+   idxShortSig = find(action.shortSig);
    
    gr=[31, 82, 27]/255;
    re=[150, 25, 18]/255;
@@ -36,13 +59,14 @@ function out = plotBot()
    idxLongsl = find(action.long.sl(end-keeph:end));
    idxLongtp1 = find(action.long.tp1(end-keeph:end));
    idxLongtp2 = find(action.long.tp2(end-keeph:end));
+   idxLongSig = find(action.buySig(end-keeph:end))+1;
    
    idxShortopen = find(action.short.open(end-keeph:end))+1;
    idxShortclose = find(action.short.close(end-keeph:end))+1;
    idxShortsl = find(action.short.sl(end-keeph:end));
    idxShorttp1 = find(action.short.tp1(end-keeph:end));
    idxShorttp2 = find(action.short.tp2(end-keeph:end));
-   
+   idxShortSig = find(action.shortSig(end-keeph:end))+1;
    
    %csvhistpath = '/home/euphotic_/yangino-bot/pythonBinance/Data/BinchBTCUSDT1h_Dec2019_Journal.csv';
    %opts = detectImportOptions(csvhist)
@@ -67,6 +91,11 @@ function out = plotBot()
       candle(ttmw,'k');hold on;
       title('Bitcoin price');
       ylabel('USD')
+      if ~isempty(idxLongSig)
+         for i = 1 : length(idxLongSig)
+            xline(ttmw.Time(idxLongSig(i)),'Color',gr,'LineWidth',2.75,'alpha',0.25);
+         end
+      end
       if ~isempty(idxLongopen)
          s=scatter(ttmw.Time(idxLongopen),ttmw.Low(idxLongopen) ,...
             'MarkerEdgeColor','k','Marker','^','MarkerFaceColor',gr);
@@ -97,7 +126,12 @@ function out = plotBot()
             'MarkerEdgeColor',gr,'Marker','o','MarkerFaceColor',gr);
          t=labeldots(ttmw.Time(idxLongtp2),ttmw.Low(idxLongtp2),'TP2','Color',bl);
       end
-   
+  
+      if ~isempty(idxShortSig)
+         for i = 1 : length(idxShortSig)
+            xline(ttmw.Time(idxShortSig(i)),'Color',re,'LineWidth',2.75,'alpha',0.25);
+         end
+      end 
       if ~isempty(idxShortopen)
          s=scatter(ttmw.Time(idxShortopen),ttmw.High(idxShortopen) ,...
             'MarkerEdgeColor','k','Marker','^','MarkerFaceColor',re);

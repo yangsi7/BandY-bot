@@ -9,22 +9,22 @@ A.MakerFee=0.020/100;
 A.TakerFee=0.040/100;
 A.strat = 'Andy';
 if A.params == 1
-   A.tp1=1;
-   A.tp2=1;
+   A.tp1=0.05;
+   A.tp2=0.0097;
    A.tp1scale=1;
    A.tp2scale=1;
-   A.dnSL=1;
-   A.ftp=0.47;
-   A.slfix = 0;
+   A.dnSL=0;
+   A.ftp=0.1;
+   A.slfix = 1;
    A.slscale1 = 4.01;
    A.slscale2 = 1.217;
    A.slscale3 = 0.2244;
    A.slscale4 = 0.661;
    A.slmax = 0.0405;
-   A.prelstop = 0.0140;
-   A.presstop = 0.0248;
-   A.adxth=9.5;
-   A.rsiobos=57.9;
+   A.prelstop = 0.001;
+   A.presstop = 0.001;
+   A.adxth=5;
+   A.rsiobos=74;
 elseif A.params == 2
    A.tp1=1;
    A.tp2=1;
@@ -246,16 +246,8 @@ limitOrder=nan(1,size(tmw,1));
             end
          end
       end
-   
-      % Buy
-      if buySig(i) & bought.status(i) == 0
-         % Start market Order
-         bought.dollsBought(i) = (1+A.TakerFee).*Funds(i).*A.useFund.*A.Leverage;
-         bought.sharesBought(i) = (Funds(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
-         bought.status(i)=1;
-         stopLoss(i) = (1-A.sstop).*tmw.Close(i);
-         action.long.open(i) = 1;
-      elseif shortSig(i) & bought.status(i) == 1
+  
+      if shortSig(i) & bought.status(i) == 1
          bought.dollsSold(i) = (1-A.MakerFee).*bought.sharesBought(i)*tmw.Close(i);
          Funds(i)=Funds(i)+bought.dollsSold(i)-bought.dollsBought(i);
          profit.bought(i) = -bought.dollsBought(i) + bought.dollsSold(i);
@@ -265,6 +257,26 @@ limitOrder=nan(1,size(tmw,1));
          stopLoss(i) = nan;
          bought.tp1(i) = 0;
          action.long.close(i) = 1;
+      end 
+      if buySig(i) & short.status(i) ==1
+         short.dollsBought(i) = (1-A.MakerFee).*short.sharesSold(i)*tmw.Close(i);
+         Funds(i)=Funds(i)+short.dollsSold(i)-short.dollsBought(i);
+         profit.short(i) = -short.dollsBought(i) + short.dollsSold(i);
+         short.dollsSold(i)=0;
+         short.sharesSold(i)=0;
+         short.status(i)=0;
+         limitOrder(i)=nan;
+         short.tp1(i) = 0;
+         action.short.close(i) = 1;
+      end
+      % Buy
+      if buySig(i) & bought.status(i) == 0
+         % Start market Order
+         bought.dollsBought(i) = (1+A.TakerFee).*Funds(i).*A.useFund.*A.Leverage;
+         bought.sharesBought(i) = (Funds(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
+         bought.status(i)=1;
+         stopLoss(i) = (1-A.sstop).*tmw.Close(i);
+         action.long.open(i) = 1;
       end
    
       % Shorting
@@ -275,16 +287,6 @@ limitOrder=nan(1,size(tmw,1));
          short.status(i)=1;
          limitOrder(i) = (1+A.lstop).*tmw.Close(i);
          action.short.open(i) = 1;
-      elseif buySig(i) & short.status(i) ==1
-         short.dollsBought(i) = (1-A.MakerFee).*short.sharesSold(i)*tmw.Close(i);
-         Funds(i)=Funds(i)+short.dollsSold(i)-short.dollsBought(i);
-         profit.short(i) = -short.dollsBought(i) + short.dollsSold(i);
-         short.dollsSold(i)=0;
-         short.sharesSold(i)=0;
-         short.status(i)=0;
-         limitOrder(i)=nan;
-         short.tp1(i) = 0;
-         action.short.close(i) = 1;
       end
       if maxFund < Funds(i)
          maxFund = Funds(i);
@@ -300,6 +302,9 @@ limitOrder=nan(1,size(tmw,1));
    SumPerf.Funds = Funds;
    SumPerf.short=short;
    SumPerf.profit = profit;
+   action.buySig = buySig;
+   action.shortSig = shortSig;
+
 
 
 %fig=figure

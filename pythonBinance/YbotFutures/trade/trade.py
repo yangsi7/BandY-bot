@@ -338,12 +338,11 @@ def stopLoss(SetUp,TradeInfo,side,stop):
     order = client.create_order(
     symbol=SetUp['trade']['pair'],
     side=side,
-    type='STOP',
-    timeInForce='GTC',
+    type='STOP_MARKET',
     reduceOnly = 'true',
     quantity=qqty,
     stopPrice=binFloat(stopPrice),
-    price=binFloat(limitPrice),
+#    price=binFloat(limitPrice),
     )
 
     if side == 'SELL':

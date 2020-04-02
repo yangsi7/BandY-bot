@@ -60,8 +60,8 @@ def main():
                     sys.stdout.flush()
                     time.sleep(1*60)
                     tries = 0
-        except Exception as e:
-            print('An error occured:' + e)
+        except:
+            print('An error occured:')
             time.sleep(60)
             tries = tries + 1
 

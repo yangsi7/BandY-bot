@@ -1,63 +1,48 @@
 function [ccost maxdrawdown SumPerf action] = cryptoSim(tmw,varargin)
 
-A.params=4;
+A.params=2;
 A.StartFund=10000;
 A.useFund=0.95;
 A.reInvest=1;
 A.Leverage=3;
 A.MakerFee=0.020/100;
 A.TakerFee=0.040/100;
-A.strat = 'Andy2';
-A.adx_jma=1;
+A.strat = 'Andy';
 if A.params == 1
-   A.tp1=0.7/100;
-   A.tp2=(2.1-0.7)/100;
+   A.tp1=0.05;
+   A.tp2=0.0097;
    A.tp1scale=1;
    A.tp2scale=1;
-   A.dnSL=1;
-   A.ftp=0.5;
+   A.dnSL=0;
+   A.ftp=0.1;
    A.slfix = 1;
-   A.slscale1 = 0.8447;
-   A.slscale2 = 2.1543;
-   A.slscale3 = 3.6491;
-   A.slscale4 = 1.6448;
-   A.slmax = 0.0519;
-   A.prelstop = 0.04;
-   A.presstop = 0.04;
-   A.adxth=17;
-   A.rsiobos=52;
-   A.adx_jma=1;
+   A.slscale1 = 4.01;
+   A.slscale2 = 1.217;
+   A.slscale3 = 0.2244;
+   A.slscale4 = 0.661;
+   A.slmax = 0.0405;
+   A.prelstop = 0.001;
+   A.presstop = 0.001;
+   A.adxth=5;
+   A.rsiobos=74;
 elseif A.params == 2
    A.tp1=1;
    A.tp2=1;
    A.tp1scale=1;
    A.tp2scale=1;
    A.dnSL=1;
-   A.ftp=0.1;
+   A.ftp=0.47;
    A.slfix = 0;
-   A.prelstop = 0.1;
-   A.presstop = 0.1;
-   A.adxth=130;
-   A.rsiobos=55.6;
-   A.adx_jma=1;
+   A.slscale1 = 3.051885707049924;
+   A.slscale2 = 2.607938690629648;
+   A.slscale3 = 0.001000000000000;
+   A.slscale4 = 0.919260816863469;
+   A.slmax = 0.054113056424365;
+   A.prelstop = 0.034681542931803;
+   A.presstop = 0.038809843031689;
+   A.adxth=5.0000;
+   A.rsiobos=74.30;
 elseif A.params == 3
-   A.tp1=0.0747;
-   A.tp2=0.0158;
-   A.tp1scale=1;
-   A.tp2scale=1;
-   A.dnSL=0;
-   A.ftp=0.1;
-   A.slfix = 1;
-   A.slscale1 = 4.5337;
-   A.slscale2 = 2.8967;
-   A.slscale3 = 2.6602;
-   A.slscale4 = 1.9090;
-   A.slmax = 0.0552;
-   A.prelstop = 0.0387;
-   A.presstop = 0.0387;
-   A.adxth=13;
-   A.rsiobos=55.6;
-elseif A.params == 4
    A.tp1=1;
    A.tp2=1;
    A.tp1scale=1;
@@ -74,9 +59,26 @@ elseif A.params == 4
    A.presstop = 0.031029;
    A.adxth=15;
    A.rsiobos=58.7;
+elseif A.params == 4
+   A.tp1=1;
+   A.tp2=1;
+   A.tp1scale=1;
+   A.tp2scale=1;
+   A.dnSL=1;
+   A.ftp=0.47;
+   A.slfix = 0;
+   A.slscale1 = 0.8447;
+   A.slscale2 = 2.154;
+   A.slscale3 = 3.649;
+   A.slscale4 = 1.645;
+   A.slmax = 0.05188;
+   A.prelstop = 0.03479;
+   A.presstop = 0.0281;
+   A.adxth=5;
+   A.rsiobos=74;
 end
-A=parse_pv_pairs(A,varargin);
 
+A=parse_pv_pairs(A,varargin);
 A.tp2 = A.tp1 + A.tp2;
 
 ccost = [];
@@ -120,7 +122,7 @@ limitOrder=nan(1,size(tmw,1));
 
    % Get buy & sell signals
    [buySig, shortSig]=strategy(tmw,'strat',A.strat,'adxth',A.adxth,...
-      'rsiobos',A.rsiobos,'adx_jma',A.adx_jma);
+      'rsiobos',A.rsiobos);
    idxSigs = find(buySig|shortSig);
    idxBuySigs = find(buySig);
    idxShortSigs = find(shortSig);
@@ -131,8 +133,6 @@ limitOrder=nan(1,size(tmw,1));
    end
    % Initialize funds
    Funds=nan(1,size(tmw,1));Funds(1:idxSigs(1))=A.StartFund;
-   % Initialize funds
-   FundsInvest=nan(1,size(tmw,1));FundsInvest(1:idxSigs(1))=A.StartFund;
    
    % Check First transaction to be made
    buyFirst=false; if idxBuySigs(1)<idxShortSigs(1); buyFirst=true;end;
@@ -144,7 +144,6 @@ limitOrder=nan(1,size(tmw,1));
       if i == 1; bought.status(i) = 0; else bought.status(i) = bought.status(i-1); end;
       if i == 1; short.status(i) = 0; else short.status(i) = short.status(i-1); end
       if i == 1; Funds(i) = Funds(1); else Funds(i) = Funds(i-1); end;
-      if i == 1; FundsInvest(i) = Funds(1); else FundsInvest(i) = FundsInvest(i-1); end;
       if i == 1; stopLoss(i) = stopLoss(1); else; stopLoss(i)=stopLoss(i-1);end   
       if i == 1; limitOrder(i) = limitOrder(1); else; limitOrder(i)=limitOrder(i-1);end 
       if i == 1; bought.dollsBought(i) = bought.dollsBought(1); ...
@@ -183,7 +182,6 @@ limitOrder=nan(1,size(tmw,1));
          elseif tmw.Low(i) < stopLoss(i)
             bought.dollsSold(i) = (1-A.MakerFee).*bought.sharesBought(i)*stopLoss(i);
             Funds(i)=Funds(i)+bought.dollsSold(i)-bought.dollsBought(i);
-            FundsInvest(i)=FundsInvest(i)+A.reInvest*(bought.dollsSold(i)-bought.dollsBought(i));
             profit.bought(i) = -bought.dollsBought(i) + bought.dollsSold(i);
             bought.dollsBought(i)=0;
             bought.sharesBought(i)=0;
@@ -196,7 +194,6 @@ limitOrder=nan(1,size(tmw,1));
             action.long.tp1Price(i) =  (1+A.tp1).*bought.dollsBought(i)./bought.sharesBought(i);
             bought.dollsSold(i) = (1-A.MakerFee).*A.ftp.*bought.dollsBought(i).*(1+A.tp1);
             Funds(i)=Funds(i)+bought.dollsSold(i)-A.ftp.*bought.dollsBought(i);
-            FundsInvest(i)=FundsInvest(i)+A.reInvest*(bought.dollsSold(i)-A.ftp.*bought.dollsBought(i));
             profit.bought(i) = -A.ftp.*bought.dollsBought(i) + bought.dollsSold(i);
             bought.dollsBought(i) = (1-A.ftp).*bought.dollsBought(i);
             bought.sharesBought(i) = (1-A.ftp).*bought.sharesBought(i); 
@@ -206,7 +203,6 @@ limitOrder=nan(1,size(tmw,1));
             action.long.tp2Price(i) =  (1+A.tp2).*bought.dollsBought(i)./bought.sharesBought(i);
             bought.dollsSold(i) = (1-A.MakerFee).*bought.dollsBought(i).*(1+A.tp2);
             Funds(i)=Funds(i)+bought.dollsSold(i)- bought.dollsBought(i);
-            FundsInvest(i)=FundsInvest(i)+A.reInvest*(bought.dollsSold(i)- bought.dollsBought(i));
             profit.bought(i) = -bought.dollsBought(i) + bought.dollsSold(i);
             bought.dollsBought(i) = 0;
             bought.sharesBought(i) = 0; 
@@ -232,7 +228,6 @@ limitOrder=nan(1,size(tmw,1));
          if tmw.High(i) > limitOrder(i) 
             short.dollsBought(i) = (1-A.MakerFee).*short.sharesSold(i)*limitOrder(i);
             Funds(i)=Funds(i)+short.dollsSold(i)-short.dollsBought(i);
-            FundsInvest(i)=FundsInvest(i)+A.reInvest*(short.dollsSold(i)-short.dollsBought(i));
             profit.short(i) = -short.dollsBought(i) + short.dollsSold(i);
             short.dollsSold(i)=0;
             short.sharesSold(i)=0;
@@ -245,7 +240,6 @@ limitOrder=nan(1,size(tmw,1));
             action.short.tp1Price(i) =  (1-A.tp1).*short.dollsSold(i)./short.sharesSold(i);
             short.dollsBought(i) = (1-A.MakerFee).*A.ftp.*short.dollsSold(i).*(1-A.tp1);
             Funds(i)=Funds(i)+A.ftp.*short.dollsSold(i)-short.dollsBought(i);
-            FundsInvest(i)=FundsInvest(i)+A.reInvest*(short.dollsSold(i)-short.dollsBought(i));
             profit.short(i) = -short.dollsBought(i) + A.ftp.*short.dollsSold(i);
             short.dollsSold(i) = (1-A.ftp).*short.dollsSold(i);
             short.sharesSold(i) = (1-A.ftp).*short.sharesSold(i); 
@@ -255,7 +249,6 @@ limitOrder=nan(1,size(tmw,1));
             action.short.tp2Price(i) =  (1-A.tp2).*short.dollsSold(i)./short.sharesSold(i);
             short.dollsBought(i) = (1-A.MakerFee).*short.dollsSold(i).*(1-A.tp2);
             Funds(i)=Funds(i)+short.dollsSold(i)- short.dollsBought(i);
-            FundsInvest(i)=FundsInvest(i)+A.reInvest*(short.dollsSold(i)- short.dollsBought(i));
             profit.short(i) = -short.dollsBought(i) + short.dollsSold(i);
             short.dollsSold(i) = 0;
             short.sharesSold(i) = 0; 
@@ -274,7 +267,6 @@ limitOrder=nan(1,size(tmw,1));
       if shortSig(i) & bought.status(i) == 1
          bought.dollsSold(i) = (1-A.MakerFee).*bought.sharesBought(i)*tmw.Close(i);
          Funds(i)=Funds(i)+bought.dollsSold(i)-bought.dollsBought(i);
-         FundsInvest(i)=FundsInvest(i)+A.reInvest*(bought.dollsSold(i)-bought.dollsBought(i));
          profit.bought(i) = -bought.dollsBought(i) + bought.dollsSold(i);
          bought.dollsBought(i)=0;
          bought.sharesBought(i)=0;
@@ -286,7 +278,6 @@ limitOrder=nan(1,size(tmw,1));
       if buySig(i) & short.status(i) ==1
          short.dollsBought(i) = (1-A.MakerFee).*short.sharesSold(i)*tmw.Close(i);
          Funds(i)=Funds(i)+short.dollsSold(i)-short.dollsBought(i);
-         FundsInvest(i)=FundsInvest(i)+A.reInvest*(short.dollsSold(i)-short.dollsBought(i));
          profit.short(i) = -short.dollsBought(i) + short.dollsSold(i);
          short.dollsSold(i)=0;
          short.sharesSold(i)=0;
@@ -298,8 +289,8 @@ limitOrder=nan(1,size(tmw,1));
       % Buy
       if buySig(i) & bought.status(i) == 0
          % Start market Order
-         bought.dollsBought(i) = (1+A.TakerFee).*FundsInvest(i).*A.useFund.*A.Leverage;
-         bought.sharesBought(i) = (FundsInvest(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
+         bought.dollsBought(i) = (1+A.TakerFee).*Funds(i).*A.useFund.*A.Leverage;
+         bought.sharesBought(i) = (Funds(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
          bought.status(i)=1;
          stopLoss(i) = (1-A.sstop).*tmw.Close(i);
          action.long.open(i) = 1;
@@ -308,8 +299,8 @@ limitOrder=nan(1,size(tmw,1));
       % Shorting
       if shortSig(i) & short.status(i) == 0
          % Start short Order (Market price)
-         short.dollsSold(i) = (1-A.TakerFee).*FundsInvest(i).*A.useFund.*A.Leverage;
-         short.sharesSold(i) = (FundsInvest(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
+         short.dollsSold(i) = (1-A.TakerFee).*Funds(i).*A.useFund.*A.Leverage;
+         short.sharesSold(i) = (Funds(i).*A.useFund)/tmw.Close(i).*A.Leverage;      
          short.status(i)=1;
          limitOrder(i) = (1+A.lstop).*tmw.Close(i);
          action.short.open(i) = 1;

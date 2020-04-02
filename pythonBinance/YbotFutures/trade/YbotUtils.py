@@ -15,6 +15,7 @@ import pickle
 import time
 import matlab.engine
 import smtplib
+from trade import trade
 
 from APIpyBinance.client_futures import Client
 from . import fetchHistorical as fetchH
@@ -111,21 +112,32 @@ def appendToCsv(csvfile, TradeInfo):
         df.to_csv(csvfile,index=False)
 
 def waitForTicker(SetUp,TradeInfo):
-    x=datetime.today()
-    y=x.replace(day=x.day, hour=x.hour, minute=59, second=30, microsecond=0)
-    delta_t=y-x
-    secs=delta_t.seconds+1
-    secWakeUp=60 # Wake up this many seconds before
+    secs=timeUntilNewTick()
+    secWakeUp=240 # Wake up this many seconds before
     minInterv=1
     secInterv=minInterv*60
-    nInterval=int(max(0,(secs-secWakeUp)//secInterv))
+    nInterval=int(max(0,(secs)//secInterv))
     # Sleep and Wake up this one minute before
     print('* * * * Next ticker in about '+str(secs//60)+' minutes * * * *')
-    print('---> Going to sleep')
-    for tt in range(0,nInterval):
+    for tt in range(0,nInterval-1):
+        if secs < secWakeUp:
+            break
         time.sleep(secInterv)
-    timeleft=(secs-secWakeUp-nInterval*secInterv)
-    time.sleep(timeleft)
+        lrow = fetchH.main(['-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"],'-no-verbose'])
+        tmpsig = fireSig(SetUp)
+        tmpsig[0][:] = tmpsig[1][:]
+        TradeInfo=trade.TakeAction(TradeInfo,tmpsig,SetUp,unconfirmed=1)
+        secs=timeUntilNewTick()
+        if secs < secWakeUp:
+            break
+        print('* * * * Next ticker in about '+str(secs//60)+' minutes * * * *')
+
+def timeUntilNewTick():
+    x=datetime.today()
+    y=x.replace(day=x.day, hour=x.hour, minute=59, second=59, microsecond=0)
+    delta_t=y-x
+    secs=delta_t.seconds+1
+    return secs
 
 def fireSig(SetUp):
     # call matlab scripts 
@@ -146,7 +158,7 @@ def plotBot(SetUp):
     eng.addpath(SetUp["paths"]["matlab"])
     try:
         # Fire Buy/Short/Sell signals
-        a = eng.plotBot()
+        a = eng.viewBot.plotBot()
     except:
         print("Unexpected error:", sys.exc_info()[0])
     eng.quit()
@@ -158,7 +170,7 @@ def CheckNew(SetUp,TradeInfo):
     while time.time()-starttime < 240:
         iter=iter+1
         Tick = fetchH.main([
-            '-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"]])
+            '-pair', SetUp["trade"]["pair"],'-tickDt',SetUp["trade"]["tickDt"],'-no-verbose'])
         LastInfo=load_obj(SetUp['paths']["LastInfo"])
 
         if TradeInfo['Close timestmp'][0] == LastInfo['LastTimeStamp']:

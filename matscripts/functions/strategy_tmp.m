@@ -62,19 +62,19 @@ end
    if A.adx_jma
       bshort.adx(tmw.adx_jma_dip < tmw.adx_jma_dim & tmw.adx_jma > A.adxth) = true;
    else
-      bshort.adx(tmw.adx_dip < tmw.adx_dim & tmw.adx > A.adxth) = true;
+      bshort.adx(tmw.adx_jma_dip < tmw.adx_jma_dim & tmw.adx_jma > A.adxth) = true;
    end
    bshort.sar(tmw.sar > tmw.Close) = true;
    bshort.rsi(tmw.rsi_v < A.rsiobos) = true;
    bshort.macd(tmw.macdH < 0) = true;
    bshort.vol(tmw.Volume > tmw.svol) = true;
 
-   if ~A.userf; blong.rf = 1; bshort.rf=1;end
-   if ~A.usepsar; blong.sar = 1; bshort.sar=1;end
-   if ~A.useadx; blong.adx = 1; bshort.adx=1;end
-   if ~A.usersi; blong.rsi = 1; bshort.rsi=1;end
-   if ~A.usemacd; blong.macd = 1; bshort.macd=1;end
-   if ~A.usevolume; blong.vol = 1; bshort.vol=1;end
+   if !A.userf; blong.rf = 1; bshort.rf=1;end
+   if !A.usepsar; blong.sar = 1; bshort.sar=1;end
+   if !A.useadx; blong.adx = 1; bshort.adx=1;end
+   if !A.usersi; blong.rsi = 1; bshort.rsi=1;end
+   if !A.usemacd; blong.macd = 1; bshort.macd=1;end
+   if !A.usevolume; blong.vol = 1; bshort.vol=1;end
       
 
    long(blong.jma & blong.rf & blong.adx & blong.sar ...

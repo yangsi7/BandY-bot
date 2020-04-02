@@ -97,21 +97,21 @@ end
          end
       end
       if ~isempty(idxLongopen)
-         s=scatter(ttmw.Time(idxLongopen),ttmw.Low(idxLongopen) ,...
-            'MarkerEdgeColor','k','Marker','^','MarkerFaceColor',gr);
+         s=scatter(ttmw.Time(idxLongopen),ttmw.Open(idxLongopen) ,...
+            'MarkerEdgeColor','k','Marker','^','MarkerFaceColor',gr,'SizeData',10);
          t=labeldots(ttmw.Time(idxLongopen),ttmw.Low(idxLongopen),'LG','Color',gr);
       end
       if ~isempty(idxLongsl)
          ttmp=action.long.slPrice(end-keeph:end);
          s=scatter(ttmw.Time(idxLongsl),ttmp(idxLongsl) ,...
             'MarkerEdgeColor',gr,'Marker','o','MarkerFaceColor',gr);
-         s.SizeData=20;
+         s.SizeData=10;
          t=labeldots(ttmw.Time(idxLongsl),ttmw.Low(idxLongsl),'SL','Color',gr);
       end
       if ~isempty(idxLongclose)
-         s=scatter(ttmw.Time(idxLongclose),ttmw.Low(idxLongclose) ,...
-            'MarkerEdgeColor',gr,'Marker','o','MarkerFaceColor',gr);
-         s.SizeData=20;
+         s=scatter(ttmw.Time(idxLongclose),ttmw.Open(idxLongclose) ,...
+            'MarkerEdgeColor',gr,'Marker','o','MarkerFaceColor',gr,'SizeData',10);
+         s.SizeData=10;
          t=labeldots(ttmw.Time(idxLongclose),ttmw.Low(idxLongclose),'SL','Color',gr);
       end
       if ~isempty(idxLongtp1)
@@ -133,21 +133,21 @@ end
          end
       end 
       if ~isempty(idxShortopen)
-         s=scatter(ttmw.Time(idxShortopen),ttmw.High(idxShortopen) ,...
-            'MarkerEdgeColor','k','Marker','^','MarkerFaceColor',re);
+         s=scatter(ttmw.Time(idxShortopen),ttmw.Open(idxShortopen) ,...
+            'MarkerEdgeColor','k','Marker','^','MarkerFaceColor',re,'SizeData',10);
          t=labeldots(ttmw.Time(idxShortopen),ttmw.High(idxShortopen),'ST','Color',re,'dy',0.04);
       end
       if ~isempty(idxShortsl)
          ttmp=action.short.slPrice(end-keeph:end);
          s=scatter(ttmw.Time(idxShortsl),ttmp(idxShortsl),...
             'MarkerEdgeColor',re,'Marker','o','MarkerFaceColor',re);
-         s.SizeData=20;
+         s.SizeData=10;
          t=labeldots(ttmw.Time(idxShortsl),ttmw.High(idxShortsl),'SL','Color',re,'dy',0.04);
       end
       if ~isempty(idxShortclose)
-         s=scatter(ttmw.Time(idxShortclose),ttmw.High(idxShortclose) ,...
-            'MarkerEdgeColor',re,'Marker','o','MarkerFaceColor',re');
-         s.SizeData=20;
+         s=scatter(ttmw.Time(idxShortclose),ttmw.Open(idxShortclose) ,...
+            'MarkerEdgeColor',re,'Marker','o','MarkerFaceColor',re,'SizeData',10);
+         s.SizeData=10;
          t=labeldots(ttmw.Time(idxShortclose),ttmw.High(idxShortclose),'SL','Color',re,'dy',0.04);
       end
       if ~isempty(idxShorttp1)

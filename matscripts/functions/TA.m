@@ -2,8 +2,8 @@ classdef TA
    methods(Static)
       function [varnames,tmw,varnamesBad] = strat1(tmw,varargin)
          % select all if no time index is provided
-         A.TimeIndex = timerange(datetime('01-Jan-2000','Locale','en_US'),...
-            datetime('31-Dec-2030','Locale','en_US'),'closed'); 
+         A.TimeIndex = timerange(datetime('01-Jan-2020','Locale','en_US'),...
+            datetime('01-Jan-2200','Locale','en_US'),'closed'); 
          A.ParamStruct = [];
          % Default parameters
          % range filter
@@ -26,8 +26,11 @@ classdef TA
          % parse
          A=parse_pv_pairs(A,varargin);
          if ~isempty(A.ParamStruct); A=A.ParamStruct;end;
-
+         
+         maxper = max([A.rfper, A.rsiper, A.jmaL, A.adxper, ...
+            A.macdfast+A.macdlong+A.macdsignal, A.svolper, A.bollper]);
          % Calculate indicators
+         tmw = tmw(A.TimeIndex,:);
          tmw = TA.rngFilt(tmw,'per',A.rfper,'mult',A.rfmult);
          tmw = TA.jma(tmw, 'L', A.jmaL, 'phi', A.jmaphi, 'pow', A.jmaphi);
          tmw = TA.rsiv(tmw, 'per',  A.rsiper);
@@ -39,6 +42,7 @@ classdef TA
          tmw = TA.svol(tmw,'per', A.svolper, 'f', A.svolf);
          tmw = TA.bollfrange(tmw,'per', A.bollper);
 
+         tmw = tmw(2*maxper+1:end,:);
 
          varnames=(tmw.Properties.VariableNames);
          varnamesBad={};
@@ -48,7 +52,6 @@ classdef TA
             end
          end
          
-         tmw = tmw(A.TimeIndex,:);
       end % CalcIndicators
       
       function tmw = rngFilt(tmw, varargin)

@@ -33,7 +33,7 @@ from .YbotUtils import AutoVivification as av
 from . import fetchHistorical as fetchH
 
 # Strategy done in matlab
-def TakeAction(TradeInfo,sig,SetUp):
+def TakeAction(TradeInfo,sig,SetUp,unconfirmed=0):
     signal = float(sig[0][0])
     if signal == 1:
         BBstr = 'bullish' 
@@ -41,29 +41,33 @@ def TakeAction(TradeInfo,sig,SetUp):
         BBstr = 'bearish'
     else:
         BBstr = 'neutral'
-    print('-----')
-    print('--- Market is *'+BBstr+'*.')
-
-    print('-----')
-    print('')
-
+    if unconfirmed==0 or BBstr!='neutral':
+        print('-----')
+        print('--- Market is *'+BBstr+'*.')
+        print('-----')
+        print('')
+    
     TradeInfo = initTradeFiles(SetUp)
-    #-------------
-    #--Close Long
-    #-------------
-    if not TradeInfo['btclO'].isnull()[0] and signal == -1:
-        print('---Bearish!')
-        print('------')
-        print('---Closing all long position...')
-        TradeInfo=closeAllOrders(SetUp,TradeInfo)
-    #-------------
-    #--Close Short
-    #-------------
-    if not TradeInfo['btcsO'].isnull()[0] and signal == 1:
-        print('---Bullish!')
-        print('------')
-        print('---Closing all short position...')
-        TradeInfo=closeAllOrders(SetUp,TradeInfo)
+    act=0
+    if unconfirmed==0:
+        #-------------
+        #--Close Long
+        #-------------
+        if not TradeInfo['btclO'].isnull()[0] and signal == -1:
+            print('---Bearish!')
+            print('------')
+            print('---Closing all long position...')
+            TradeInfo=closeAllOrders(SetUp,TradeInfo)
+            act=1
+        #-------------
+        #--Close Short
+        #-------------
+        if not TradeInfo['btcsO'].isnull()[0] and signal == 1:
+            print('---Bullish!')
+            print('------')
+            print('---Closing all short position...')
+            TradeInfo=closeAllOrders(SetUp,TradeInfo)
+            act=1
     #-------------
     #--Strategy 1 - with take profits
     #-------------
@@ -74,10 +78,12 @@ def TakeAction(TradeInfo,sig,SetUp):
         if not TradeInfo['btcsO'].isnull()[0]:
             TradeInfo=updateStopLoss(SetUp,TradeInfo,'BUY',0.1)
             TradeInfo=checkTakeProfit(SetUp,TradeInfo,'BUY')
+            act=1
 
         if not TradeInfo['btclO'].isnull()[0]:
             TradeInfo=updateStopLoss(SetUp,TradeInfo,'SELL',0.1)
             TradeInfo=checkTakeProfit(SetUp,TradeInfo,'SELL')
+            act=1
         #-------------
         #--Buy
         #-------------
@@ -88,17 +94,20 @@ def TakeAction(TradeInfo,sig,SetUp):
             TradeInfo=putOrder(SetUp,TradeInfo,'BUY',tpBol=True)
             TradeInfo=stopLoss(SetUp,TradeInfo,'SELL',SetUp['trade']['Stop'])
             TradeInfo=takeProfit(SetUp,TradeInfo,'SELL')
+            act=1
         #-------------
         #--Short
         #-------------
-        elif TradeInfo['btcsO'].isnull()[0] and  signal == -1: 
+        if TradeInfo['btcsO'].isnull()[0] and  signal == -1: 
             print('---Bearish!')
             print('------')
             print('---Selling Short...')
             TradeInfo=putOrder(SetUp,TradeInfo,'SELL',tpBol=True)
             TradeInfo=stopLoss(SetUp,TradeInfo,'BUY',SetUp['trade']['Stop'])
             TradeInfo=takeProfit(SetUp,TradeInfo,'BUY')
-        else:
+            act=1
+
+        if act==0:
             print('---No action taken')
     #-------------
     #--Strategy 2 - with dynamic SL
@@ -114,15 +123,24 @@ def TakeAction(TradeInfo,sig,SetUp):
         ssl = SetUp['trade']['sslBase'] + SetUp['trade'
                 ]['slScale3']*(up**SetUp['trade']['slScale4'])
         ssl = min(ssl,SetUp['trade']['slMax'])
-
+        
+        if unconfirmed==0:
+            dsl = 0
+        else:
+            dsl = 0.5
+        
         #-------------
         #--Check if SL or TPs were hit
         #-------------
         if not TradeInfo['btcsO'].isnull()[0]:
-            TradeInfo=updateStopLoss(SetUp,TradeInfo,'BUY',ssl)
+            TradeInfo=updateStopLoss(SetUp,TradeInfo,'BUY',ssl+dsl,unconfirmed=unconfirmed)
+            act=1
 
         if not TradeInfo['btclO'].isnull()[0]:
-            TradeInfo=updateStopLoss(SetUp,TradeInfo,'SELL',lsl)
+            act=1
+            TradeInfo=updateStopLoss(SetUp,TradeInfo,'SELL',lsl+dsl,unconfirmed=unconfirmed)
+
+                
         #-------------
         #--Buy
         #-------------
@@ -132,6 +150,7 @@ def TakeAction(TradeInfo,sig,SetUp):
             print('---Going long...')
             TradeInfo=putOrder(SetUp,TradeInfo,'BUY')
             TradeInfo=stopLoss(SetUp,TradeInfo,'SELL',lsl)
+            act=1
         #-------------
         #--Short
         #-------------
@@ -141,7 +160,9 @@ def TakeAction(TradeInfo,sig,SetUp):
             print('---Selling Short...')
             TradeInfo=putOrder(SetUp,TradeInfo,'SELL')
             TradeInfo=stopLoss(SetUp,TradeInfo,'BUY',ssl)
-        else:
+            act=1
+
+        if act==0:
             print('---No action taken')
        
     # Displaying last price 
@@ -154,11 +175,12 @@ def TakeAction(TradeInfo,sig,SetUp):
     #sendEmail(TradeInfo)
 
     # Write trade journal
-    LastInfo=load_obj(SetUp['paths']['LastInfo']) 
-    TradeInfo['Close timestmp']=LastInfo['LastTimeStamp']
-    TradeInfo['timestmp'] = int(time.time())
-    TradeInfo['Signal'] = signal
-    appendToCsv(SetUp['paths']['TradeInfo'],TradeInfo)
+    if act==1:
+        LastInfo=load_obj(SetUp['paths']['LastInfo']) 
+        TradeInfo['Close timestmp']=LastInfo['LastTimeStamp']
+        TradeInfo['timestmp'] = int(time.time())
+        TradeInfo['Signal'] = signal
+        appendToCsv(SetUp['paths']['TradeInfo'],TradeInfo)
     plotBot(SetUp)
     return TradeInfo
 
@@ -271,6 +293,7 @@ def closeAllOrders(SetUp,TradeInfo):
         )
         TradeInfo['btclO'] = np.nan
         TradeInfo['BprlO'] = np.nan
+        TradeInfo['BlSLh']=True
 
     if not TradeInfo['btcsO'].isnull()[0]:
         print('Closing short position ('+str(TradeInfo['btcsO'][0])+')')
@@ -284,6 +307,7 @@ def closeAllOrders(SetUp,TradeInfo):
         )
         TradeInfo['btcsO'] = np.nan
         TradeInfo['BprsO'] = np.nan
+        TradeInfo['BsSLh']=True
 
     TradeInfo = initTradeFiles(SetUp)
     return TradeInfo
@@ -504,13 +528,13 @@ def checkTakeProfit(SetUp,TradeInfo,side):
         print('TP1 and TP2 status is: '+ ordertp1['status']+'/'+ ordertp2['status'])
     return TradeInfo
 
-def updateStopLoss(SetUp,TradeInfo,side,stop):
+def updateStopLoss(SetUp,TradeInfo,side,stop,unconfirmed=0):
     if TradeInfo['LongStopLossId'][0
             ] == np.nan or  TradeInfo['ShortStopLossId'][0] == np.nan:
         print('No stop loss found...')
         print('--> No action taken')
         return TradeInfo
-    
+    oppSide = 'SELL' if side == 'BUY' else 'BUY'
     orderId = TradeInfo['LongStopLossId'][0
             ] if side == 'SELL' else TradeInfo['ShortStopLossId'][0]
     # Open Binance client
@@ -560,15 +584,18 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
         print('Stop Loss is getting filled...')
         print('--> do nothing for now...')
     elif any(order['status'] == s for s in ['NEW', 'CANCELED','REJECTED','EXPIRED','PENDING_CANCEL']):
-        print('Stop loss status is '+order['status'])
+        currstop = binFloat(TradeInfo['Buy Stop Price'][0]
+            ) if side == 'BUY' else binFloat(TradeInfo['Sell Stop Price'][0])
+        if unconfirmed == 0:
+            originprice = TradeInfo['BprlO'][0] if side =='SELL' else TradeInfo['BprsO'][0]
+            print('Stop loss status is '+ order['status']+' (Stop-loss '+side+': '
+                +str(currstop)+' to close order '+oppSide+': '+str(originprice)+')')
         if order['status'] == 'NEW' or order['status'] == 'CANCELED':
             # Check if a stop loss update is needed (new>old)
             # Calculate Limit order value
             LastPrice=float(client.get_symbol_ticker(symbol=SetUp['trade']['pair'])['price'])
             tmpstop = binFloat((1+float(stop))*LastPrice
                     ) if side == 'BUY' else binFloat((1-float(stop))*LastPrice)
-            currstop = binFloat(TradeInfo['Buy Stop Price'][0]
-                ) if side == 'BUY' else binFloat(TradeInfo['Sell Stop Price'][0])
             if (currstop > tmpstop and side == 'BUY'
                 ) or (currstop < tmpstop and side == 'SELL'):
                 print('Updating stop loss...')
@@ -589,7 +616,8 @@ def updateStopLoss(SetUp,TradeInfo,side,stop):
                 TradeInfo['Update-SL-Buy'] =True if side == 'BUY' else False
                 TradeInfo= stopLoss(SetUp,TradeInfo,side,stop)
             else:
-                print('Keeping current Stop loss...')
+                if unconfirmed == 0:
+                    print('Keeping current Stop loss...')
     else:
         print('Error:could not update')
     return TradeInfo

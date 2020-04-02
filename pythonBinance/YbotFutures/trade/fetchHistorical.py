@@ -57,7 +57,8 @@ def main(args):
         dfHist.drop_duplicates(subset='Open timestmp',keep='last',inplace=True)
         dfHist.to_csv(SetUp["paths"]["Hist"], index=False, header=True)
         if len(dfHist)==iniLen:
-            print("---" + args.pair + args.tickDt + " is up to date!")
+            if args.verbose:
+                print("---" + args.pair + args.tickDt + " is up to date!")
         else:
             print("---Last update to " + args.pair + args.tickDt + " was on the " + BinInfo['LastDateStr'])
             print("------")        
